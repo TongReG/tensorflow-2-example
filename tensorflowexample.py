@@ -1,4 +1,4 @@
-#基础1 线型回归example
+#基础1 tensorflow 1 线型回归example
 import os
 import time
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉就是使用cpu，不注释就是使用gpu
@@ -36,17 +36,22 @@ sess.run(init)
 # 梯度下降算法， 学习率0.02, 可以认为每次迭代修改A，修改一次0.02。比如A初始化为20, 发现不好，于是猜测下一个A为20-0.02
 my_opt = tf.train.GradientDescentOptimizer(learning_rate=0.02)
 train_step = my_opt.minimize(loss)#目标，使得损失函数达到最小值
+
+flag = 1
 for i in range(randomnum):#0到100,不包括100
     # 随机从样本中取值
     rand_index = np.random.choice(randomnum)
     rand_x = [x_vals[rand_index]]
     rand_y = [y_vals[rand_index]]
     #损失函数引用的placeholder(直接或间接用的都算), x_data使用样本rand_x， y_target用样本rand_y
-    timecnt = time.time()
+    if flag == 1:
+        timecnt = time.time()
+        flag = 0
     sess.run(train_step, feed_dict={x_data: rand_x, y_target: rand_y})
     #打印
     if i % 50 == 0:
         timef = time.time()
+        flag = 1
         print('step: ' + str(i) + ' A = ' + str(sess.run(A)))
         print('loss: ' + str(sess.run(loss, feed_dict={x_data: rand_x, y_target: rand_y})))
         print('time: ' + str(timef - timecnt))
@@ -62,17 +67,20 @@ train_step = my_optwo.minimize(loss)
 init = tf.global_variables_initializer()#初始化变量
 sess.run(init)
 
+flag = 1
 for i in range(randomnum):#0到100,不包括100
     # 随机从样本中取值
     rand_index = np.random.choice(randomnum)
     rand_x = [x_vals[rand_index]]
     rand_y = [y_vals[rand_index]]
-    
-    timecnt = time.time()
+    if flag == 1:
+        timecnt = time.time()
+        flag = 0
     sess.run(train_step, feed_dict={x_data: rand_x, y_target: rand_y})
     #打印
     if i % 50 == 0:
         timef = time.time()
+        flag = 1
         print('step: ' + str(i) + ' A = ' + str(sess.run(A)))
         print('loss: ' + str(sess.run(loss, feed_dict={x_data: rand_x, y_target: rand_y})))
         print('time: ' + str(timef - timecnt))

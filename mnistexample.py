@@ -66,7 +66,7 @@ model.compile(optimizer='adam',
 
 #print('\nMNIST Test accuracy:', test_acc)
 model.fit(train_images, train_labels, epochs=15)
-test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=1)
+test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)
 
 print('\nMNIST FASHION Test accuracy:', test_acc)
 
@@ -108,17 +108,18 @@ def plot_value_array(i, predictions_array, true_label):
 
 # Plot the first X test images, their predicted labels, and the true labels.
 # Color correct predictions in blue and incorrect predictions in red.
-num_rows = 6
-num_cols = 6
-num_images = num_rows * num_cols
-plt.figure(figsize=(2 * 2 * num_cols, 2 * num_rows))
-for i in range(num_images):
-  plt.subplot(num_rows, 2 * num_cols, 2 * i + 1)
-  plot_image(i, predictions[i], test_labels, test_images)
-  plt.subplot(num_rows, 2 * num_cols, 2 * i + 2)
-  plot_value_array(i, predictions[i], test_labels)
-plt.tight_layout()
-plt.show()
+for j in range(10):
+    num_rows = 6
+    num_cols = 6
+    num_images = num_rows * num_cols
+    plt.figure(figsize=(2 * 2 * num_cols, 2 * num_rows))
+    for i in range(num_images):
+      plt.subplot(num_rows, 2 * num_cols, 2 * i + 1)
+      plot_image(i + j * num_images, predictions[i + j * num_images], test_labels, test_images)
+      plt.subplot(num_rows, 2 * num_cols, 2 * i + 2)
+      plot_value_array(i + j * num_images, predictions[i + j * num_images], test_labels)
+    plt.tight_layout()
+    plt.show()#show(False)
 
 
 # Grab an image from the test dataset.

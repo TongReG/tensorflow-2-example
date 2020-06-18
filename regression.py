@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pathlib
 import pandas as pd
-import seaborn as sns
+# import seaborn as sns
 
 print(tf.__version__)
 
