@@ -22,6 +22,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="mnistexample.py" />
+    <Compile Include="mnistlayers.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="regression.py">
       <SubType>Code</SubType>
     </Compile>
