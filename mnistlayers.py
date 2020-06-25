@@ -9,7 +9,7 @@ import numpy as np
 import pathlib
 import shutil
 import tempfile
-
+#pip install -q git+https://github.com/tensorflow/docs
 import tensorflow_docs as tfdocs
 import tensorflow_docs.modeling
 import tensorflow_docs.plots
@@ -36,13 +36,17 @@ BUFFER_SIZE = int(1e4)
 BATCH_SIZE = 500
 STEPS_PER_EPOCH = N_TRAIN//BATCH_SIZE
 
+#Next include callbacks.EarlyStopping to avoid long and unnecessary training times. 
+#Note that this callback is set to monitor the val_binary_crossentropy, not the val_loss. 
+#This difference will be important later.
+
 def get_callbacks(name):
   return [tfdocs.modeling.EpochDots(),
     tf.keras.callbacks.EarlyStopping(monitor='val_binary_crossentropy', patience=200),
     tf.keras.callbacks.TensorBoard(logdir / name),]
 
 
-def compile_and_fit(model, name, optimizer='adam', max_epochs=15):
+def compile_and_fit(model, name, optimizer='adam', max_epochs=20):
   if optimizer is None:
     optimizer = get_optimizer()
   model.compile(optimizer=optimizer,
@@ -53,19 +57,25 @@ def compile_and_fit(model, name, optimizer='adam', max_epochs=15):
   model.summary()
 
   history = model.fit(train_images, train_labels,
-    steps_per_epoch = STEPS_PER_EPOCH,
     epochs=max_epochs,
-    validation_data=validate_ds,
+    validation_data=test_images,
     callbacks=get_callbacks(name),
-    verbose=0)
+    verbose=2)
+
+  #history = model.fit(train_images, train_labels,
+  #  steps_per_epoch = STEPS_PER_EPOCH,
+  #  epochs=max_epochs,
+  #  validation_data=validate_ds,
+  #  callbacks=get_callbacks(name),
+  #  verbose=2)
   return history
 
 
 size_histories = {}
 regularizer_histories = {}
 
-shutil.rmtree(logdir / 'regularizers/Tiny', ignore_errors=True)
-shutil.copytree(logdir / 'sizes/Tiny', logdir / 'regularizers/Tiny')
+shutil.rmtree(logdir / 'regularizers/Normal', ignore_errors=True)
+shutil.copytree(logdir / 'sizes/Normal', logdir / 'regularizers/Normal')
 
 
 #将模型的各层堆叠起来，以搭建 tf.keras.Sequential 模型。为训练选择优化器和损失函数
@@ -104,7 +114,6 @@ large_model = tf.keras.Sequential([tf.keras.layers.Flatten(input_shape=(28, 28))
 
 
 size_histories['Normal'] = compile_and_fit(model, 'sizes/Normal')
-size_histories['large'] = compile_and_fit(large_model, "sizes/large")
 regularizer_histories['Normal'] = size_histories['Normal']
 regularizer_histories['large'] = compile_and_fit(large_model, "regularizers/large")
 
@@ -116,8 +125,6 @@ print('\nMNIST FASHION Normal accuracy:', test_acc)
 print('\nMNIST FASHION Large accuracy:', large_acc)
 
 plotter = tfdocs.plots.HistoryPlotter(metric = 'binary_crossentropy', smoothing_std=10)
-plotter.plot(size_histories)
-plt.ylim([0, 0.9])
 
 plotter.plot(size_histories)
 a = plt.xscale('log')
@@ -183,10 +190,6 @@ for j in range(10):
       plot_value_array(i + j * num_images, predictions[i + j * num_images], test_labels)
     plt.tight_layout()
     plt.show()#show(False)
-
-
-
-
 
 
 
