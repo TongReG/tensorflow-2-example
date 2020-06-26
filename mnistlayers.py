@@ -47,11 +47,11 @@ def get_callbacks(name):
     #min_delta: 在被监测的数据中被认为是提升的最小变化，例如，小于 min_delta 的绝对变化会被认为没有提升。
     #patience: 没有进步的训练轮数，在这之后训练就会被停止。
     #verbose: 详细信息模式。
-  return [tf.keras.callbacks.EarlyStopping(monitor='val_sparse_categorical_crossentropy', patience=20),
+  return [tf.keras.callbacks.EarlyStopping(monitor='val_sparse_categorical_crossentropy', patience=25),
     tf.keras.callbacks.TensorBoard(logdir / name),]
 
 
-def compile_and_fit(model, name, optimizer='adam', max_epochs=50):
+def compile_and_fit(model, name, optimizer='adam', max_epochs=80):
   if optimizer is None:
     optimizer = get_optimizer()
   model.compile(optimizer=optimizer,
@@ -110,11 +110,11 @@ model = tf.keras.models.Sequential([tf.keras.layers.Flatten(input_shape=(28, 28)
 
 large_model = tf.keras.Sequential([tf.keras.layers.Flatten(input_shape=(28, 28)),
   tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-  tf.keras.layers.Dropout(0.2),
+  tf.keras.layers.Dropout(0.25),
   tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-  tf.keras.layers.Dropout(0.2),
+  tf.keras.layers.Dropout(0.25),
   tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-  tf.keras.layers.Dropout(0.2),
+  tf.keras.layers.Dropout(0.25),
   tf.keras.layers.Dense(10, activation='softmax')])
 
 
@@ -123,8 +123,8 @@ regularizer_histories['Normal'] = size_histories['Normal']
 regularizer_histories['large'] = compile_and_fit(large_model, "regularizers/large")
 
 #训练并验证模型：
-test_loss, test_acc = model.evaluate(x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks())
-large_loss, large_acc = large_model.evaluate(x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks())
+test_loss, test_acc = model.evaluate(x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks('sizes/Normal'))
+large_loss, large_acc = large_model.evaluate(x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks("regularizers/large"))
 
 print('\nMNIST FASHION Normal accuracy:', test_acc)
 print('\nMNIST FASHION Large accuracy:', large_acc)
