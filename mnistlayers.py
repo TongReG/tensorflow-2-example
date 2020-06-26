@@ -58,7 +58,7 @@ def compile_and_fit(model, name, optimizer='adam', max_epochs=20):
 
   history = model.fit(train_images, train_labels,
     epochs=max_epochs,
-    validation_data=test_images,
+    validation_data=(test_images, test_labels),
     callbacks=get_callbacks(name),
     verbose=2)
 
