@@ -41,17 +41,22 @@ STEPS_PER_EPOCH = N_TRAIN // BATCH_SIZE
 #val_loss.
 #This difference will be important later.
 def get_callbacks(name):
-  return [tfdocs.modeling.EpochDots(),
-    tf.keras.callbacks.EarlyStopping(monitor='val_binary_crossentropy', patience=200),
+    #tfdocs.modeling.EpochDots(),
+
+    #monitor: 被监测的数据。
+    #min_delta: 在被监测的数据中被认为是提升的最小变化，例如，小于 min_delta 的绝对变化会被认为没有提升。
+    #patience: 没有进步的训练轮数，在这之后训练就会被停止。
+    #verbose: 详细信息模式。
+  return [tf.keras.callbacks.EarlyStopping(monitor='val_binary_crossentropy', patience=20),
     tf.keras.callbacks.TensorBoard(logdir / name),]
 
 
-def compile_and_fit(model, name, optimizer='adam', max_epochs=20):
+def compile_and_fit(model, name, optimizer='adam', max_epochs=50):
   if optimizer is None:
     optimizer = get_optimizer()
   model.compile(optimizer=optimizer,
-                loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
-                metrics=[tf.keras.losses.BinaryCrossentropy(from_logits=True, name='binary_crossentropy'),
+                loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, name='sparse_categorical_crossentropy'),
+                metrics=[tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, name='sparse_categorical_crossentropy'),
                   'accuracy'])
 
   model.summary()
