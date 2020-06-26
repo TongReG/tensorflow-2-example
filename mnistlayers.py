@@ -47,7 +47,7 @@ def get_callbacks(name):
     #min_delta: 在被监测的数据中被认为是提升的最小变化，例如，小于 min_delta 的绝对变化会被认为没有提升。
     #patience: 没有进步的训练轮数，在这之后训练就会被停止。
     #verbose: 详细信息模式。
-  return [tf.keras.callbacks.EarlyStopping(monitor='val_binary_crossentropy', patience=20),
+  return [tf.keras.callbacks.EarlyStopping(monitor='val_sparse_categorical_crossentropy', patience=20),
     tf.keras.callbacks.TensorBoard(logdir / name),]
 
 
@@ -123,13 +123,13 @@ regularizer_histories['Normal'] = size_histories['Normal']
 regularizer_histories['large'] = compile_and_fit(large_model, "regularizers/large")
 
 #训练并验证模型：
-test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)
-large_loss, large_acc = large_model.evaluate(test_images, test_labels, verbose=2)
+test_loss, test_acc = model.evaluate(x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks())
+large_loss, large_acc = large_model.evaluate(x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks())
 
 print('\nMNIST FASHION Normal accuracy:', test_acc)
 print('\nMNIST FASHION Large accuracy:', large_acc)
 
-plotter = tfdocs.plots.HistoryPlotter(metric = 'binary_crossentropy', smoothing_std=10)
+plotter = tfdocs.plots.HistoryPlotter(metric = 'sparse_categorical_crossentropy', smoothing_std=5)
 
 plotter.plot(size_histories)
 a = plt.xscale('log')
@@ -144,6 +144,10 @@ plt.ylim([0.2, 0.9])
 probability_model = tf.keras.Sequential([model, 
                                          tf.keras.layers.Softmax()])
 predictions = probability_model.predict(test_images)
+
+probability_largemodel = tf.keras.Sequential([large_model, 
+                                         tf.keras.layers.Softmax()])
+predictions_large = probability_largemodel.predict(test_images)
 
 
 
