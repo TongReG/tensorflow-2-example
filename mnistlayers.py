@@ -14,11 +14,10 @@ import tensorflow_docs as tfdocs
 import tensorflow_docs.modeling
 import tensorflow_docs.plots
 
-logdir = pathlib.Path(tempfile.mkdtemp())/"tensorboard_logs"
+logdir = pathlib.Path(tempfile.mkdtemp()) / "tensorboard_logs"
 shutil.rmtree(logdir, ignore_errors=True)
 
 #载入并准备好 MNIST 数据集。将样本从整数转换为浮点数：
-
 fashion_mnist = tf.keras.datasets.fashion_mnist
 (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
 
@@ -34,12 +33,13 @@ N_VALIDATION = int(1e3)
 N_TRAIN = int(1e4)
 BUFFER_SIZE = int(1e4)
 BATCH_SIZE = 500
-STEPS_PER_EPOCH = N_TRAIN//BATCH_SIZE
+STEPS_PER_EPOCH = N_TRAIN // BATCH_SIZE
 
-#Next include callbacks.EarlyStopping to avoid long and unnecessary training times. 
-#Note that this callback is set to monitor the val_binary_crossentropy, not the val_loss. 
+#Next include callbacks.EarlyStopping to avoid long and unnecessary training
+#times.
+#Note that this callback is set to monitor the val_binary_crossentropy, not the
+#val_loss.
 #This difference will be important later.
-
 def get_callbacks(name):
   return [tfdocs.modeling.EpochDots(),
     tf.keras.callbacks.EarlyStopping(monitor='val_binary_crossentropy', patience=200),
@@ -75,7 +75,7 @@ size_histories = {}
 regularizer_histories = {}
 
 shutil.rmtree(logdir / 'regularizers/Normal', ignore_errors=True)
-shutil.copytree(logdir / 'sizes/Normal', logdir / 'regularizers/Normal')
+#shutil.copytree(logdir / 'sizes/Normal', logdir / 'regularizers/Normal')
 
 
 #将模型的各层堆叠起来，以搭建 tf.keras.Sequential 模型。为训练选择优化器和损失函数
@@ -96,19 +96,19 @@ shutil.copytree(logdir / 'sizes/Normal', logdir / 'regularizers/Normal')
 #Each node contains a score that indicates the current image belongs to one of
 #the 10 classes.
 model = tf.keras.models.Sequential([tf.keras.layers.Flatten(input_shape=(28, 28)),
-  tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+  tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
   tf.keras.layers.Dropout(0.2),
-  tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+  tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
   tf.keras.layers.Dropout(0.2),
   tf.keras.layers.Dense(10, activation='softmax')])
 
 
 large_model = tf.keras.Sequential([tf.keras.layers.Flatten(input_shape=(28, 28)),
-  tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+  tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
   tf.keras.layers.Dropout(0.2),
-  tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+  tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
   tf.keras.layers.Dropout(0.2),
-  tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+  tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
   tf.keras.layers.Dropout(0.2),
   tf.keras.layers.Dense(10, activation='softmax')])
 
