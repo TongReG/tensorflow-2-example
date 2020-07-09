@@ -35,6 +35,25 @@ BUFFER_SIZE = int(1e4)
 BATCH_SIZE = 500
 STEPS_PER_EPOCH = N_TRAIN // BATCH_SIZE
 
+MODELSTATE = False
+
+def modelrestore():
+    try : #如果模型存在则直接预加载，不再训练
+        model = tf.keras.models.load_model('fashion_mnist_normal.h5')
+        large_model = tf.keras.models.load_model('fashion_mnist_large.h5')
+        MODELSTATE = True
+    except :
+        print('\nModel Load failed ! Restart training steps.')
+        MODELSTATE = False
+    return MODELSTATE
+
+def modelsave():
+    #保存模型的权重和偏置
+    try :
+        model.save('fashion_mnist_normal.h5')  # creates a HDF5 file
+        large_model.save('fashion_mnist_large.h5')
+    except : print('\nModel Save failed !')
+
 #Next include callbacks.EarlyStopping to avoid long and unnecessary training
 #times.
 #Note that this callback is set to monitor the val_binary_crossentropy, not the
@@ -51,7 +70,7 @@ def get_callbacks(name):
     tf.keras.callbacks.TensorBoard(logdir / name),]
 
 
-def compile_and_fit(model, name, optimizer='adam', max_epochs=80):
+def compile_and_fit(model, name, optimizer='adam', max_epochs=120):
   if optimizer is None:
     optimizer = get_optimizer()
   model.compile(optimizer=optimizer,
@@ -81,7 +100,7 @@ regularizer_histories = {}
 
 shutil.rmtree(logdir / 'regularizers/Normal', ignore_errors=True)
 #shutil.copytree(logdir / 'sizes/Normal', logdir / 'regularizers/Normal')
-
+MODELSTATE = modelrestore()
 
 #将模型的各层堆叠起来，以搭建 tf.keras.Sequential 模型。为训练选择优化器和损失函数
 
@@ -100,45 +119,47 @@ shutil.rmtree(logdir / 'regularizers/Normal', ignore_errors=True)
 #The second (and last) layer returns a logits array with length of 10.
 #Each node contains a score that indicates the current image belongs to one of
 #the 10 classes.
-model = tf.keras.models.Sequential([tf.keras.layers.Flatten(input_shape=(28, 28)),
-  tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-  tf.keras.layers.Dropout(0.2),
-  tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-  tf.keras.layers.Dropout(0.2),
-  tf.keras.layers.Dense(10, activation='softmax')])
+if not MODELSTATE :
+    model = tf.keras.models.Sequential([tf.keras.layers.Flatten(input_shape=(28, 28)),
+      tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+      tf.keras.layers.Dropout(0.2),
+      tf.keras.layers.Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+      tf.keras.layers.Dropout(0.2),
+      tf.keras.layers.Dense(10, activation='softmax')])
 
+    large_model = tf.keras.Sequential([tf.keras.layers.Flatten(input_shape=(28, 28)),
+      tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+      tf.keras.layers.Dropout(0.3),
+      tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+      tf.keras.layers.Dropout(0.3),
+      tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+      tf.keras.layers.Dropout(0.3),
+      tf.keras.layers.Dense(10, activation='softmax')])
 
-large_model = tf.keras.Sequential([tf.keras.layers.Flatten(input_shape=(28, 28)),
-  tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-  tf.keras.layers.Dropout(0.25),
-  tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-  tf.keras.layers.Dropout(0.25),
-  tf.keras.layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-  tf.keras.layers.Dropout(0.25),
-  tf.keras.layers.Dense(10, activation='softmax')])
-
-
-size_histories['Normal'] = compile_and_fit(model, 'sizes/Normal')
-regularizer_histories['Normal'] = size_histories['Normal']
-regularizer_histories['large'] = compile_and_fit(large_model, "regularizers/large")
+    size_histories['Normal'] = compile_and_fit(model, 'sizes/Normal')
+    regularizer_histories['Normal'] = size_histories['Normal']
+    regularizer_histories['large'] = compile_and_fit(large_model, "regularizers/large")
 
 #训练并验证模型：
-test_loss, test_acc = model.evaluate(x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks('sizes/Normal'))
-large_loss, large_acc = large_model.evaluate(x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks("regularizers/large"))
+test_loss, test_sparse_categorical_crossentropy, test_acc = model.evaluate(x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks('sizes/Normal'))
+large_loss, large_sparse_categorical_crossentropy, large_acc = large_model.evaluate(x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks("regularizers/large"))
 
-print('\nMNIST FASHION Normal accuracy:', test_acc)
-print('\nMNIST FASHION Large accuracy:', large_acc)
+print('\nMNIST FASHION Normal sparse categorical crossentropy:', test_sparse_categorical_crossentropy)
+print('\nMNIST FASHION Large sparse categorical crossentropy:', large_sparse_categorical_crossentropy)
+print('\nMNIST FASHION Normal val_loss/accurary:' , test_loss, test_acc)
+print('\nMNIST FASHION Large val_loss/accurary:', large_loss, large_acc)
+modelsave()
 
 plotter = tfdocs.plots.HistoryPlotter(metric = 'sparse_categorical_crossentropy', smoothing_std=5)
 
 plotter.plot(size_histories)
 a = plt.xscale('log')
-plt.xlim([5, max(plt.xlim())])
-plt.ylim([0, 0.9])
+plt.xlim([0, max(plt.xlim())])
+plt.ylim([0, 2])
 plt.xlabel("Epochs [Log Scale]")
 
 plotter.plot(regularizer_histories)
-plt.ylim([0.2, 0.9])
+plt.ylim([0, 2])
 
 
 probability_model = tf.keras.Sequential([model, 

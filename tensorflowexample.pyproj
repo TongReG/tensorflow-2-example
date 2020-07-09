@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>84430f31-c3b9-4e5c-8990-6f68b6dfb980</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>tensorflowexample.py</StartupFile>
+    <StartupFile>mnistlayers.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
