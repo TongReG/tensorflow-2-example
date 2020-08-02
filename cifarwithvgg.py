@@ -1,5 +1,6 @@
 # CIFAR1O/100 + VGG13/16
 import os
+import re
 import time
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -8,20 +9,16 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉就是使用cpu�
 # tf.random.set_seed(2345)
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 # tf.config.experimental.set_memory_growth(device=physical_devices[0],enable=True)
-
-# 在文件名中包含周期数.  (使用 str.format)
-checkpoint_path = "vgg13/cp-{epoch:04d}.ckpt"
-checkpoint_dir = os.path.dirname(checkpoint_path)
-if not os.path.exists(checkpoint_dir):
-        os.makedirs(checkpoint_dir)
-latest = tf.train.latest_checkpoint(checkpoint_dir)
-# 创建一个检查点回调 https://blog.csdn.net/zengNLP/article/details/94589469
-cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path,
-                                                 verbose=0, 
-                                                 save_best_only=False, 
-                                                 save_weights_only=False, 
-                                                 mode='auto',
-                                                 period=1)
+# 启用设备放置日志记录将导致打印任何张量分配或操作
+# tf.debugging.set_log_device_placement(True)
+try : #如果模型存在则直接预加载，不再训练
+    vgg13_net = tf.keras.models.load_model('cifar10_vgg13.h5')
+    fc_net = tf.keras.models.load_model('cifar10_vgg13fc.h5')
+    VGG13STATE = True
+    print('\nVGG13 Model Load Successful.\n')
+except :
+    print('\nVGG13 Model Load failed ! Restart training steps.\n')
+    VGG13STATE = False
 
 #预处理
 def preprocess(x,y):
@@ -82,11 +79,50 @@ optimizer = tf.keras.optimizers.Adam(lr=1e-4)
 vgg13_net.summary()
 fc_net.summary()
 
+# 在文件名中包含周期数.  (使用 str.format)
+checkpoint_vgg13 = tf.train.Checkpoint(model=vgg13_net, myOptimizer=optimizer)
+checkpoint_vgg13fc = tf.train.Checkpoint(model=fc_net, myOptimizer=optimizer)
+checkpoint_vgg13path = "vgg13/"
+checkpoint_vgg13dir = os.path.dirname(checkpoint_vgg13path)
+checkpoint_vgg13fcdir = os.path.dirname("vgg13fc/")
+if not os.path.exists(checkpoint_vgg13dir):
+        os.makedirs(checkpoint_vgg13dir)
+        os.makedirs(checkpoint_vgg13fcdir)
+ckptmngr_vgg13 = tf.train.CheckpointManager(checkpoint_vgg13, directory=checkpoint_vgg13dir, max_to_keep=3)
+ckptmngr_vgg13fc = tf.train.CheckpointManager(checkpoint_vgg13fc, directory=checkpoint_vgg13fcdir, max_to_keep=3)
+
+vgg13_latestpoint = tf.train.latest_checkpoint(checkpoint_vgg13dir)
+print('\nVGG13 Latest traindata:',vgg13_latestpoint,'\n')
+
+# 创建一个检查点回调 https://blog.csdn.net/zengNLP/article/details/94589469
+cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_vgg13path,
+                                                 verbose=0, 
+                                                 save_best_only=False, 
+                                                 save_weights_only=False, 
+                                                 mode='auto',
+                                                 period=1)
+
+
+ckpt_num = re.findall(r"\d+\.?\d*",vgg13_latestpoint)
+print('\n',ckpt_num,'\n')
+ckpt_num = int(ckpt_num[1])+1
+try:
+    checkpoint_vgg13.restore(ckptmngr_vgg13.latest_checkpoint)
+    checkpoint_vgg13fc.restore(ckptmngr_vgg13fc.latest_checkpoint)
+    print('\nVGG13 checkpoint Load Successful.\n')
+except:
+    print('\nVGG13 checkpoint Load Failed.\n')
+    ckpt_num = 0
+
+
+
 #tf.trainable_variables()函数可以也仅可以查看可训练的变量
 variables = vgg13_net.trainable_variables + fc_net.trainable_variables
 flag = 1
-for epoch in range(30):
-    for step,(x,y) in enumerate(train_data): #one epoch has 50000 photos steps = 50000/batchsize
+epoch_num = 30
+for epoch in range(ckpt_num, epoch_num - ckpt_num):
+    elapsed_epoch = 0.0
+    for step,(x,y) in enumerate(train_data): #one epoch has 50000 photos, steps = 50000/batchsize
         if flag == 1:
             start = time.clock()
             flag = 0
@@ -101,9 +137,10 @@ for epoch in range(30):
         optimizer.apply_gradients(zip(grads,variables))  #更新梯度
         if step % 8 == 0:
             elapsed = (time.clock() - start)
+            elapsed_epoch += elapsed
             flag = 1
             print('Epoch:',epoch,'Step:',step,'datas:',step * batchsize,'loss:',float(loss))
-            print('Time:',elapsed)
+            print('Time:',elapsed,'EpochTime:',elapsed_epoch)
 
     total_num = 0
     total_correct = 0
@@ -120,9 +157,19 @@ for epoch in range(30):
     acc = total_correct / total_num
     print('Epoch_End :',epoch,'Accurary :',acc,'Correct_num :',total_correct)
 
-    vgg13_net.save_weights(os.path.join(checkpoint_dir,'vgg13_cp_{epoch:04d}'.format(epoch)))
-
+    ckptmngr_vgg13.save(checkpoint_number=epoch)
+    ckptmngr_vgg13fc.save(checkpoint_number=epoch + epoch_num)
+    print('Checkpoint Saved by Manager.\n')
+    #try:
+    #    vgg13_net.save_weights(os.path.join(checkpoint_dir,'vgg13_cp_{epoches:04d}'.format(epoches
+    #    = epoch)))
+    #    fc_net.save_weights(os.path.join(checkpoint_dir,'vgg13fc_cp_{epoches:04d}'.format(epoches
+    #    = epoch)))
+    #    print('Epoch weight Saved')
+    #except: print('Epoch weight Save FAILED!!!!')
 vgg13_net.save('cifar10_vgg13.h5')
+fc_net.save('cifar10_vgg13fc.h5')
+
 
 weight_decay = 5e-4
 dropout_rate = 0.5
