@@ -94,19 +94,11 @@ ckptmngr_vgg13fc = tf.train.CheckpointManager(checkpoint_vgg13fc, directory=chec
 vgg13_latestpoint = tf.train.latest_checkpoint(checkpoint_vgg13dir)
 print('\nVGG13 Latest traindata:',vgg13_latestpoint,'\n')
 
-# 创建一个检查点回调 https://blog.csdn.net/zengNLP/article/details/94589469
-cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_vgg13path,
-                                                 verbose=0, 
-                                                 save_best_only=False, 
-                                                 save_weights_only=False, 
-                                                 mode='auto',
-                                                 period=1)
 
-
-ckpt_num = re.findall(r"\d+\.?\d*",vgg13_latestpoint)
-print('\n',ckpt_num,'\n')
-ckpt_num = int(ckpt_num[1])+1
 try:
+    ckpt_num = re.findall(r"\d+\.?\d*",vgg13_latestpoint)
+    print('\n',ckpt_num,'\n')
+    ckpt_num = int(ckpt_num[1]) + 1
     checkpoint_vgg13.restore(ckptmngr_vgg13.latest_checkpoint)
     checkpoint_vgg13fc.restore(ckptmngr_vgg13fc.latest_checkpoint)
     print('\nVGG13 checkpoint Load Successful.\n')
@@ -176,6 +168,15 @@ dropout_rate = 0.5
 batch_size = 128
 learning_rate = 1e-2
 epoch_num = 50
+checkpoint_vgg16path = "vgg16/"
+# 创建一个检查点回调 https://blog.csdn.net/zengNLP/article/details/94589469
+cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_vgg16path,
+                                                 verbose=0, 
+                                                 save_best_only=False, 
+                                                 save_weights_only=False, 
+                                                 mode='auto',
+                                                 period=1)
+
 vgg16_layers = [tf.keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3), kernel_regularizer=tf.keras.regularizers.l2(weight_decay)),
     tf.keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same', kernel_regularizer = tf.keras.regularizers.l2(weight_decay)),
     tf.keras.layers.MaxPooling2D((2, 2)),
