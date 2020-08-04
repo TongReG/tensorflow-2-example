@@ -79,7 +79,7 @@ optimizer = tf.keras.optimizers.Adam(lr=1e-4)
 vgg13_net.summary()
 fc_net.summary()
 
-# 在文件名中包含周期数.  (使用 str.format)
+# 在文件名中包含周期数.  (使用 str.format) tf.train方式
 checkpoint_vgg13 = tf.train.Checkpoint(model=vgg13_net, myOptimizer=optimizer)
 checkpoint_vgg13fc = tf.train.Checkpoint(model=fc_net, myOptimizer=optimizer)
 checkpoint_vgg13path = "vgg13/"
@@ -107,12 +107,11 @@ except:
     ckpt_num = 0
 
 
-
 #tf.trainable_variables()函数可以也仅可以查看可训练的变量
 variables = vgg13_net.trainable_variables + fc_net.trainable_variables
 flag = 1
 epoch_num = 30
-for epoch in range(ckpt_num, epoch_num - ckpt_num):
+for epoch in range(ckpt_num, epoch_num):
     elapsed_epoch = 0.0
     for step,(x,y) in enumerate(train_data): #one epoch has 50000 photos, steps = 50000/batchsize
         if flag == 1:
@@ -163,18 +162,22 @@ vgg13_net.save('cifar10_vgg13.h5')
 fc_net.save('cifar10_vgg13fc.h5')
 
 
+
+
 weight_decay = 5e-4
 dropout_rate = 0.5
 batch_size = 128
 learning_rate = 1e-2
 epoch_num = 50
-checkpoint_vgg16path = "vgg16/"
-# 创建一个检查点回调 https://blog.csdn.net/zengNLP/article/details/94589469
+checkpoint_vgg16path = "vgg16/weights.{epoch:02d}"
+# Keras方式创建一个检查点回调 https://blog.csdn.net/zengNLP/article/details/94589469
 cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_vgg16path,
                                                  verbose=0, 
                                                  save_best_only=False, 
                                                  save_weights_only=False, 
+                                                 save_freq='epoch',
                                                  mode='auto',
+                                                 patience=3,
                                                  period=1)
 
 vgg16_layers = [tf.keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3), kernel_regularizer=tf.keras.regularizers.l2(weight_decay)),
@@ -225,7 +228,7 @@ change_lr = tf.keras.callbacks.LearningRateScheduler(scheduler)
 vgg16_model.compile(loss='sparse_categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 vgg16_model.fit(train_images, train_labels,
           epochs=epoch_num,
-          callbacks=[change_lr],
+          callbacks=[change_lr, cp_callback],
           validation_data=(test_images, test_labels))
 
 test_loss, test_acc = vgg13_net.evaluate(x=test_images, y=test_labels, verbose=0)
