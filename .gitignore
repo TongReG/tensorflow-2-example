@@ -343,3 +343,4 @@ healthchecksdb
 /vgg16
 /cifar10_vgg13fc.h5
 /cifar10_vgg13.h5
+/beginner.ipynb

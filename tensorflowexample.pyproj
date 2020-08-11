@@ -21,6 +21,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="cpytorch.py" />
     <Compile Include="mnistexample.py" />
     <Compile Include="mnistlayers.py">
       <SubType>Code</SubType>

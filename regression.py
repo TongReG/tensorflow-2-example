@@ -4,7 +4,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import os
 import time
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉就是使用cpu，不注释就是使用gpu
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉可以调用GPU，不注释时使用CPU
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,7 +32,7 @@ dataset.tail()
 dataset.isna().sum()
 dataset = dataset.dropna()
 
-#"Origin" 列实际上代表分类，而不仅仅是一个数字。所以把它转换为独热码 （one-hot）:
+#"Origin" 列实际上代表分类，而不仅仅是一个数字。所以把它转换为独热码（one-hot）:
 origin = dataset.pop('Origin')
 dataset['USA'] = (origin == 1) * 1.0
 dataset['Europe'] = (origin == 2) * 1.0

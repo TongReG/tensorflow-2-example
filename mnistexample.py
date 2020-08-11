@@ -1,7 +1,7 @@
-#基础2 MNIST
+#基础2-1 MNIST基本训练
 import os
 import time
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉就是使用cpu，不注释就是使用gpu
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉可以调用GPU，不注释时使用CPU
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
@@ -106,7 +106,7 @@ def plot_value_array(i, predictions_array, true_label):
   thisplot[predicted_label].set_color('red')
   thisplot[true_label].set_color('blue')
 
-# Plot the first X test images, their predicted labels, and the true labels.
+# Plot the first 6*6 test images, their predicted labels, and the true labels.
 # Color correct predictions in blue and incorrect predictions in red.
 for j in range(10):
     num_rows = 6

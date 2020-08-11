@@ -1,7 +1,7 @@
 #基础1 tensorflow 1.x 线型回归example
 import os
 import time
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉就是使用cpu，不注释就是使用gpu
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉可以调用GPU，不注释时使用CPU
 import tensorflow.compat.v1 as tf
 import numpy as np
 

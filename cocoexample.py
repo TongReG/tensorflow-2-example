@@ -1,4 +1,4 @@
-#MSCOCO 2017 Dataset example
+#基础4 MSCOCO 2017 Dataset example
 
 #http://images.cocodataset.org/zips/train2017.zip
 #http://images.cocodataset.org/annotations/annotations_trainval2017.zip
@@ -8,10 +8,11 @@
 
 #http://images.cocodataset.org/zips/test2017.zip
 #http://images.cocodataset.org/annotations/image_info_test2017.zip
+
 import os
 import time
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉就是使用cpu，不注释就是使用gpu
 import tensorflow as tf
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉可以调用GPU，不注释时使用CPU
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib

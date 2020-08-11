@@ -1,7 +1,7 @@
-# MNIST Overfit
+#基础2-2 MNIST Overfit Example
 import os
 import time
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉就是使用cpu，不注释就是使用gpu
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉可以调用GPU，不注释时使用CPU
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
