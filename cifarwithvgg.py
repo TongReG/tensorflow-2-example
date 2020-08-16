@@ -26,15 +26,17 @@ def preprocess(x,y):
     y = tf.cast(y,dtype=tf.int32)
     return x,y
 
-batchsize = 256
+batchsize = 128
 (train_images, train_labels),(test_images, test_labels) = tf.keras.datasets.cifar10.load_data()
+#(train_images, train_labels),(test_images, test_labels) = tf.keras.datasets.cifar100.load_data()
+
 train_label_s = tf.squeeze(train_labels,axis=1)
 test_label_s = tf.squeeze(test_labels,axis=1)
 # print(x_train.shape,y_train.shape,x_test.shape,y_test.shape)
 # batch就是将多个元素组合成batch
 # shuffle的功能为打乱dataset中的元素，参数buffersize表示打乱时使用的buffer的大小
 train_data = tf.data.Dataset.from_tensor_slices((train_images, train_label_s))
-train_data = train_data.shuffle(buffer_size=5000).map(preprocess).batch(batchsize)
+train_data = train_data.shuffle(buffer_size=1024).map(preprocess).batch(batchsize)
 
 #tf.keras.utils.to_categorical将数据转换为one hot格式
 #train_labels = tf.keras.utils.to_categorical(train_labels, 10)
@@ -131,8 +133,8 @@ for epoch in range(ckpt_num, epoch_num):
             elapsed = (time.clock() - start)
             elapsed_epoch += elapsed
             flag = 1
-            print('Epoch:',epoch,'Step:',step,'datas:',step * batchsize,'loss:',float(loss))
-            print('Time:',elapsed,'EpochTime:',elapsed_epoch)
+            print('Epoch:',epoch,'Step:',step,'datas:',step * batchsize,'loss:','%.4f' % float(loss))
+            print('Time:','%.4f' % elapsed,'EpochTime:','%.4f' % elapsed_epoch)
 
     total_num = 0
     total_correct = 0
@@ -160,8 +162,9 @@ for epoch in range(ckpt_num, epoch_num):
     #    print('Epoch weight Saved')
     #except: print('Epoch weight Save FAILED!!!!')
 if not vgg13_restorestate:
-    vgg13_net.save('cifar10_vgg13.h5')
-    fc_net.save('cifar10_vgg13fc.h5')
+    if not VGG13STATE:
+        vgg13_net.save('cifar10_vgg13.h5')
+        fc_net.save('cifar10_vgg13fc.h5')
 
 
 
@@ -249,7 +252,7 @@ change_lr = tf.keras.callbacks.LearningRateScheduler(scheduler)
 if vgg16_reloadstate == False:
     vgg16_model.compile(loss='sparse_categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
     vgg16_model.fit(train_images, train_labels,
-          epochs=epoch_num - ckpt_num,
+          epochs=epoch_num,
           callbacks=[change_lr, cp_callback],
           validation_data=(test_images, test_labels))
     large_loss, large_acc = vgg16_model.evaluate(x=test_images, y=test_labels, verbose=0)
@@ -264,6 +267,9 @@ else:
 test_loss, test_acc = vgg13_net.evaluate(x=test_images, y=test_labels, verbose=0)
 print('\nCIFAR10 VGG13 val_loss/accurary:' , test_loss, test_acc)
 print('\nCIFAR10 VGG16 val_loss/accurary:', large_loss, large_acc)
+#print('\nCIFAR100 VGG13 val_loss/accurary:' , test_loss, test_acc)
+#print('\nCIFAR100 VGG16 val_loss/accurary:', large_loss, large_acc)
+
 
 if vgg16_reloadstate == False:
     vgg16_model.save('cifar10_vgg16.h5')
