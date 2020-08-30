@@ -1,9 +1,8 @@
-#基础3 搭建 VGG13/16 训练 CIFAR1O/100 自动保存恢复结果
+#基础3 Keras搭建VGG13/16 训练CIFAR1O/100 自动保存恢复结果
 import os
 import re
 import time
 import tensorflow as tf
-import matplotlib.pyplot as plt
 import numpy as np
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉可以调用GPU，不注释时使用CPU
 # tf.random.set_seed(2345)
@@ -174,6 +173,11 @@ dropout_rate = 0.5
 batch_size = 128
 learning_rate = 1e-2
 epoch_num = 30
+
+if not os.path.exists("vgg16/"):
+        os.makedirs("vgg16/")
+        os.makedirs("vgg16/weights")
+
 checkpoint_vgg16path = "vgg16/weights"
 #checkpoint_vgg16path = "vgg16/weights.{epoch:02d}"
 checkpoint_vgg16dir = os.listdir("vgg16/")
