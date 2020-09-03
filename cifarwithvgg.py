@@ -71,7 +71,7 @@ vgg13_layers = [tf.keras.layers.Conv2D(64,kernel_size=[3,3],padding="same",activ
 vgg13_net = tf.keras.Sequential(vgg13_layers)
 fc_net = tf.keras.Sequential([tf.keras.layers.Dense(4096,activation=tf.nn.relu),
         tf.keras.layers.Dense(4096,activation=tf.nn.relu),
-        tf.keras.layers.Dense(10,activation='softmax'),])
+        tf.keras.layers.Dense(10,activation='softmax')])
 
 vgg13_net.build(input_shape=[None, 32, 32, 3])
 fc_net.build(input_shape=[None,512])
