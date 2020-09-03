@@ -33,12 +33,8 @@ import cv2
 path_keypoints = 'annotations/person_keypoints_train2017.json'
 path_instances = 'annotations/instances_train2017.json'
 path_captions = 'annotations/captions_train2017.json'
-
-coco_train = pycocotools.coco.COCO(path_instances)
-COCO_CLASSES = coco_train.dataset['categories']
-train_ids = list(coco_train.imgToAnns.keys())
-if len(self.ids) == 0:  # 如果没有标签或者不需要GT，则直接使用image
-    train_ids = list(coco_train.imgs.keys())
+#COCO训练集的图像数据保存的目录
+img_path = 'train2017/'
 
 #COCO_CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
 #                'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
@@ -111,61 +107,6 @@ def readrle(M):
     plt.imshow(GEMFIELD)
     plt.show()
 
-#COCO训练集的图像数据保存的目录
-img_path = 'train2017/'
- 
-# display COCO categories and supercategories
-catas = coco_train.loadCats(coco_train.getCatIds())
-catas_dict = {}
-for cata in catas:
-    catas_dict[cata['id']] = cata['name']
- 
-#获取COCO数据集中所有图像的ID,构建训练集文件列表，里面的每个元素是路径名+图片文件名
-trainimg_ids = coco_train.getImgIds()
-print(len(trainimg_ids))
-train_images_filenames = os.listdir(img_path)
-#查找训练集的图片是否都有对应的ID，并保存到一个列表中
-trainimg_path = []
-i = 1
-total = len(train_images_filenames)
-for image_names in train_images_filenames:
-    if int(image_file[15:-4]) in trainimg_ids:
-        trainimg_path.append(img_path + ',' + image_names)
-    if i % 100 == 0 or i == total:
-        print('Processing image list %i of %i\r' % (i, total), end='')
-    i += 1
-trainimg_path = random.shuffle(trainimg_path)
- 
-all_catas = set()   #保存目标检测所有的类别，COCO共定义了90个类别，只有80个类别有检测数据
-imgrcg_box = {}
-#获取每个图像的目标检测框的数据并保存
-for path in trainimg_path:
-    boxes = [[],[],[],[],[]]
-    fname = path.split(',')[1]
-    imgid = int(fname[15:-4])
-    annIds_nocrowd = coco_train.getAnnIds(imgIds=imgid, iscrowd=None)
-    annoations = coco_train.loadAnns(annIds_nocrowd)
-    for ann in annoations:
-        bbox = ann['bbox']
-        x_min = int(bbox[0])
-        x_max = int(bbox[0] + bbox[2])
-        y_min = int(bbox[1])
-        y_max = int(bbox[1] + bbox[3])
-        all_catas.add(catas_dict[ann['category_id']])
-        boxes[0].append(ann['category_id'])
-        boxes[1].append(x_min)
-        boxes[2].append(y_min)
-        boxes[3].append(x_max)
-        boxes[4].append(y_max)
-    imgrcg_box[fname] = boxes
- 
-#获取有目标检测数据的80个类别的名称
-all_cata_list = list(all_catas)
-all_cata_dict = {}
-for i in range(len(all_cata_list)):
-    all_cata_dict[all_cata_list[i]] = i
-print(all_cata_dict)
- 
 #把图像以及对应的检测框，类别等数据保存到TFRECORD
 def make_example(image, height, width, label, bbox, filename):
     colorspace = b'RGB'
@@ -184,9 +125,6 @@ def make_example(image, height, width, label, bbox, filename):
                      'bbox_ymax' : tf.train.Feature(int64_list=tf.train.Int64List(value=bbox[3])),
                      'filename': tf.train.Feature(bytes_list=tf.train.BytesList(value=[filename]))}))
 
-cores = int(cpu_count()/2)   #定义用到的CPU处理的核心数
-max_num = 1536   #每个TFRECORD文件包含的最多的图像数
-print('\nCPU Nums =>',cores,'\n')
 #定义多进程函数用于生成TFRECORD文件
 def gen_tfrecord(trainrecords, targetfolder, num, queue):
     records_file_num = num
@@ -256,8 +194,6 @@ def _parse_function(example_proto):
     
     return bbox, image_train, image_decoded
 
- 
- 
 #定义多进程处理
 def process_in_queues(namelist, cores, targetfolder):
     total_files_num = len(namelist)
@@ -304,71 +240,141 @@ def process_in_queues(namelist, cores, targetfolder):
             break
     return total
  
-print('Start processing train data using %i CPU cores:' % cores)
-startime = time.time()        
-total_processed = process_in_queues(trainimg_path, cores, targetfolder='coco_record/')
-endtime = time.time()
-print('\nProcess finish, total process %i images in %i seconds.' % (total_processed, int(endtime - startime)), end='')
 
-batch_size = 32
-# https://tensorflow.google.cn/api_docs/python/tf/keras/applications
-# https://keras.io/zh/applications/#applications
-std_vgg16 = tf.keras.applications.vgg16.VGG16(weights='imagenet', 
-                                              include_top=False, 
-                                              pooling=max,
-                                              classifier_activation='softmax')
-std_vgg19 = tf.keras.applications.vgg19.VGG19(weights='imagenet', 
-                                              include_top=True, 
-                                              classifier_activation='softmax')
-std_mnet = tf.keras.applications.mobilenet.MobileNet(weights='imagenet',
-                                                     dropout=1e-3,
-                                                     include_top=False,
-                                                     classifier_activation='softmax')
-std_mnetv2 = tf.keras.applications.mobilenet_v2.MobileNetV2(weights='imagenet',
-                                                            include_top=False,
-                                                            classifier_activation='softmax')
-std_res50 = tf.keras.applications.resnet50.ResNet50(include_top=True, 
-                                                    weights='imagenet')
-std_res50v2 = tf.keras.applications.resnet_v2.ResNet50V2(include_top=True,
-                                                         weights='imagenet',
-                                                         classifier_activation='softmax')
-std_res152v2 = tf.keras.applications.resnet_v2.ResNet152V2(include_top=True,
-                                                           weights='imagenet',
-                                                           classifier_activation='softmax')
-std_incv3 = tf.keras.applications.inception_v3.InceptionV3(include_top=True, 
-                                                           weights='imagenet',
-                                                           classifier_activation='softmax')
-std_incv4 = tf.keras.applications.InceptionResNetV2(include_top=True, weights='imagenet', classifier_activation='softmax')
+if __name__ == '__main__':
+    freeze_support()
+    coco_train = pycocotools.coco.COCO(path_instances)
+    COCO_CLASSES = coco_train.dataset['categories']
+    train_ids = list(coco_train.imgToAnns.keys())
+    if len(self.ids) == 0:  # 如果没有标签或者不需要GT，则直接使用image
+        train_ids = list(coco_train.imgs.keys())
 
-#img = tf.keras.preprocessing.image.load_img(img_path, target_size=(224, 224))
-#x = tf.keras.preprocessing.image.img_to_array(img)
-#x = np.expand_dims(x, axis=0)
-#x = tf.keras.applications.vgg16.preprocess_input(x)
-
-train_files = tf.data.Dataset.list_files("coco_record/*.tfrecord")
-dataset_train = train_files.interleave(tf.data.TFRecordDataset, cycle_length=4, num_parallel_calls=4)
-dataset_train = dataset_train.shuffle(buffer_size=epoch_size)
-dataset_train = dataset_train.map(_parse_function, num_parallel_calls=cores)
-dataset_train = dataset_train.padded_batch(batch_size, \
-                                            padded_shapes=([None,None], \
-                                            [None, None, None], \
-                                            [None, None, None], \
-                                            [None, None, None]))
-dataset_train = dataset_train.prefetch(batch_size)
-# https://tensorflow.google.cn/api_docs/python/tf/data/Iterator
-iterator = iter(dataset_train)
-count = 0
-try:
-    while True:
-        bbox_run[count], images_train[count], images_decode[count] = iterator.get_next()
-        count += 1
-except StopIteration:
-    print('\n遍历结束,迭代次数为',count,'\n')
+    # display COCO categories and supercategories
+    catas = coco_train.loadCats(coco_train.getCatIds())
+    catas_dict = {}
+    for cata in catas:
+        catas_dict[cata['id']] = cata['name']
  
-#验证数据 
-imgdex = random.randint(0,9)     #select one image in the batch
-image = images_decode[imgdex]
-image_bbox = bbox_run[imgdex]
-for i in range(image_bbox.shape[0]):
-    cv2.rectangle(image, (image_bbox[i][0],image_bbox[i][2]), (image_bbox[i][1],image_bbox[i][3]), (0,255,0), 2)
-plt.imshow(image)
+    #获取COCO数据集中所有图像的ID,构建训练集文件列表，里面的每个元素是路径名+图片文件名
+    trainimg_ids = coco_train.getImgIds()
+    print(len(trainimg_ids))
+    train_images_filenames = os.listdir(img_path)
+    #查找训练集的图片是否都有对应的ID，并保存到一个列表中
+    trainimg_path = []
+    i = 1
+    total = len(train_images_filenames)
+    for image_names in train_images_filenames:
+        if int(image_names[:-4]) in trainimg_ids:
+            trainimg_path.append(img_path + ',' + image_names)
+        if i % 100 == 0 or i == total:
+            print('Processing image list %i of %i\r' % (i, total), end='')
+        i += 1
+    random.shuffle(trainimg_path)
+ 
+    all_catas = set()   #保存目标检测所有的类别，COCO共定义了90个类别，只有80个类别有检测数据
+    imgrcg_box = {}
+    #获取每个图像的目标检测框的数据并保存
+    for path in trainimg_path:
+        boxes = [[],[],[],[],[]]
+        fname = path.split(',')[1]
+        imgid = int(fname[:-4])
+        annIds_nocrowd = coco_train.getAnnIds(imgIds=imgid, iscrowd=None)
+        annoations = coco_train.loadAnns(annIds_nocrowd)
+        for ann in annoations:
+            bbox = ann['bbox']
+            x_min = int(bbox[0])
+            x_max = int(bbox[0] + bbox[2])
+            y_min = int(bbox[1])
+            y_max = int(bbox[1] + bbox[3])
+            all_catas.add(catas_dict[ann['category_id']])
+            boxes[0].append(ann['category_id'])
+            boxes[1].append(x_min)
+            boxes[2].append(y_min)
+            boxes[3].append(x_max)
+            boxes[4].append(y_max)
+        imgrcg_box[fname] = boxes
+ 
+    #获取有目标检测数据的80个类别的名称
+    all_cata_list = list(all_catas)
+    all_cata_dict = {}
+    for i in range(len(all_cata_list)):
+        all_cata_dict[all_cata_list[i]] = i
+    print(all_cata_dict)
+
+    cores = int(cpu_count()/2)   #定义用到的CPU处理的核心数
+    max_num = 1536   #每个TFRECORD文件包含的最多的图像数
+    print('\nCPU Nums =>',cores,'\n')
+
+    if not os.path.exists('coco_record/'):
+        os.makedirs('coco_record/')
+
+    print('Start processing train data using %i CPU cores:' % cores)
+    startime = time.time()        
+    total_processed = process_in_queues(trainimg_path, cores, targetfolder='coco_record/')
+    endtime = time.time()
+    print('\nProcess finish, total process %i images in %i seconds.' % (total_processed, int(endtime - startime)), end='')
+
+    batch_size = 32
+    # https://tensorflow.google.cn/api_docs/python/tf/keras/applications
+    # https://keras.io/zh/applications/#applications
+    std_vgg16 = tf.keras.applications.vgg16.VGG16(weights='imagenet', 
+                                                  include_top=False, 
+                                                  pooling=max,
+                                                  classifier_activation='softmax')
+    std_vgg19 = tf.keras.applications.vgg19.VGG19(weights='imagenet', 
+                                                  include_top=True, 
+                                                  classifier_activation='softmax')
+    std_mnet = tf.keras.applications.mobilenet.MobileNet(weights='imagenet',
+                                                         dropout=1e-3,
+                                                         include_top=False,
+                                                         classifier_activation='softmax')
+    std_mnetv2 = tf.keras.applications.mobilenet_v2.MobileNetV2(weights='imagenet',
+                                                                include_top=False,
+                                                                classifier_activation='softmax')
+    std_res50 = tf.keras.applications.resnet50.ResNet50(include_top=True, 
+                                                        weights='imagenet')
+    std_res50v2 = tf.keras.applications.resnet_v2.ResNet50V2(include_top=True,
+                                                             weights='imagenet',
+                                                             classifier_activation='softmax')
+    std_res152v2 = tf.keras.applications.resnet_v2.ResNet152V2(include_top=True,
+                                                               weights='imagenet',
+                                                               classifier_activation='softmax')
+    std_incv3 = tf.keras.applications.inception_v3.InceptionV3(include_top=True, 
+                                                               weights='imagenet',
+                                                               classifier_activation='softmax')
+    std_incv4 = tf.keras.applications.InceptionResNetV2(include_top=True, weights='imagenet', classifier_activation='softmax')
+
+    #img = tf.keras.preprocessing.image.load_img(img_path, target_size=(224, 224))
+    #x = tf.keras.preprocessing.image.img_to_array(img)
+    #x = np.expand_dims(x, axis=0)
+    #x = tf.keras.applications.vgg16.preprocess_input(x)
+
+    train_files = tf.data.Dataset.list_files("coco_record/*.tfrecord")
+    dataset_train = train_files.interleave(tf.data.TFRecordDataset, cycle_length=4, num_parallel_calls=4)
+    dataset_train = dataset_train.shuffle(buffer_size=epoch_size)
+    dataset_train = dataset_train.map(_parse_function, num_parallel_calls=cores)
+    dataset_train = dataset_train.padded_batch(batch_size, \
+                                                padded_shapes=([None,None], \
+                                                [None, None, None], \
+                                                [None, None, None], \
+                                                [None, None, None]))
+    dataset_train = dataset_train.prefetch(batch_size)
+    # https://tensorflow.google.cn/api_docs/python/tf/data/Iterator
+    iterator = iter(dataset_train)
+    count = 0
+    bbox_run, images_train, images_decode = [],[],[]
+    try:
+        while True:
+            bbox_run[count], images_train[count], images_decode[count] = iterator.get_next()
+            count += 1
+    except StopIteration:
+        print('\n遍历结束,迭代次数为',count,'\n')
+ 
+    #验证数据 
+    imgdex = random.randint(0,count)     #select one image in the batch
+    image = images_decode[imgdex]
+    image_bbox = bbox_run[imgdex]
+    for i in range(image_bbox.shape[0]):
+        cv2.rectangle(image, (image_bbox[i][0],image_bbox[i][2]), (image_bbox[i][1],image_bbox[i][3]), (0,255,0), 2)
+    plt.imshow(image)
+
