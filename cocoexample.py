@@ -38,6 +38,11 @@ path_captions = 'annotations/captions_train2017.json'
 img_path = 'train2017/'
 catas_dict = {}
 imgrcg_box = {}
+cores = int(cpu_count() / 2)   #定义用到的CPU处理的核心数
+if cores >= 8:
+    cores = 8
+max_num = 2048   #每个TFRECORD文件包含的最多的图像数
+
 
 #COCO_CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
 #                'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
@@ -153,19 +158,23 @@ def gen_tfrecord(trainrecords, targetfolder, num, queue):
     for record in trainrecords:
         file_num += 1
         fields = record.split(',')
-        print('fields =>',fields)
         img = cv2.imread(fields[0] + fields[1])
         height, width, _ = img.shape
         img_jpg = cv2.imencode('.jpg', img)[1].tobytes()
-        bbox = imgrcg_box[fields[1]]
-        bbox[1] = [item for item in bbox[1]]   #xmin
-        bbox[3] = [item for item in bbox[3]]   #xmax
-        bbox[2] = [item for item in bbox[2]]  #ymin
-        bbox[4] = [item for item in bbox[4]]  #ymax
-        catnames = [catas_dict[item] for item in bbox[0]]
-        label = [all_cata_dict[item] for item in catnames]
-        extra = make_example(img_jpg, height, width, label, bbox[1:], fields[1].encode())
-        writer.write(extra.SerializeToString())
+        fname = fields[1]
+        #如果用dict[key]这个读取会报KeyError异常，
+        #dict.get方法主要是提供一个取不到对应key的value就返回默认值的功能
+        bbox = imgrcg_box.get(fname)
+        if bbox:
+            bbox[1] = [item for item in bbox[1]]   #xmin
+            bbox[3] = [item for item in bbox[3]]   #xmax
+            bbox[2] = [item for item in bbox[2]]  #ymin
+            bbox[4] = [item for item in bbox[4]]  #ymax
+            catnames = [catas_dict[item] for item in bbox[0]]
+            label = [all_cata_dict[item] for item in catnames]
+            extra = make_example(img_jpg, height, width, label, bbox[1:], fname.encode())
+            writer.write(record=extra.SerializeToString())
+        else: continue
         #每写入100条记录，向父进程发送消息，报告进度
         if file_num % 100 == 0:
             queue.put((pid, file_num))
@@ -309,7 +318,9 @@ if __name__ == '__main__':
             boxes[3].append(x_max)
             boxes[4].append(y_max)
         imgrcg_box[fname] = boxes
-        print('imgrcg_box',fname,'=>',imgrcg_box[fname])
+        if fname in imgrcg_box:
+            print('imgrcg_box',fname,'=>',imgrcg_box[fname])
+        else: print('imgrcg_box',fname,'Does not exist!!')
  
     #获取有目标检测数据的80个类别的名称
     all_cata_list = list(all_catas)
@@ -318,8 +329,6 @@ if __name__ == '__main__':
         all_cata_dict[all_cata_list[i]] = i
     print(all_cata_dict)
 
-    cores = int(cpu_count() / 2)   #定义用到的CPU处理的核心数
-    max_num = 1536   #每个TFRECORD文件包含的最多的图像数
     print('\nCPU Nums =>',cores,'\n')
 
     if not os.path.exists('coco_record/'):
@@ -369,7 +378,7 @@ if __name__ == '__main__':
 
     train_files = tf.data.Dataset.list_files("coco_record/*.tfrecord")
     dataset_train = train_files.interleave(tf.data.TFRecordDataset, cycle_length=4, num_parallel_calls=4)
-    dataset_train = dataset_train.shuffle(buffer_size=epoch_size)
+    dataset_train = dataset_train.shuffle(buffer_size=int(len(trainimg_ids)/batch_size))
     dataset_train = dataset_train.map(_parse_function, num_parallel_calls=cores)
     dataset_train = dataset_train.padded_batch(batch_size, \
                                                 padded_shapes=([None,None], \
