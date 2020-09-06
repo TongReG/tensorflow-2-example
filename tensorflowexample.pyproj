@@ -37,6 +37,9 @@
     <Compile Include="cifarwithvgg.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="coco_init.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="regression.py">
       <SubType>Code</SubType>
     </Compile>

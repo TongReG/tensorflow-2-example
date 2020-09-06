@@ -1,4 +1,4 @@
-# celeaar on pytorch
+# Extra: Train with celeaar on pytorch using SegNET
 # Numpy
 import numpy as np
 
