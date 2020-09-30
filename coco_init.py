@@ -224,7 +224,8 @@ def process_in_queues(namelist, cores, targetfolder):
                     p.join()
                 break
             time.sleep(0.5)
-        except:
+        except Exception as e:
+            print("\nException catched as : %s" % e)
             print("Queue Process Failed. End execution.")
             break
     return total
@@ -237,11 +238,11 @@ if __name__ == '__main__':
     #if len(self.ids) == 0: # 如果没有标签或者不需要GT，则直接使用image
     #    train_ids = list(coco_train.imgs.keys())
 
-    # display COCO categories and supercategories
+    # display COCO categories and supercategories  id => name
     catas = coco_train.loadCats(coco_train.getCatIds())
     for cata in catas:
         catas_dict[cata['id']] = cata['name']
- 
+  
     #获取COCO数据集中所有图像的ID,构建训练集文件列表，里面的每个元素是路径名+图片文件名
     trainimg_ids = coco_train.getImgIds()
     print('trainimg_NUMBERS =>',len(trainimg_ids))
@@ -283,7 +284,7 @@ if __name__ == '__main__':
             print('imgrcg_box',fname,'=>',imgrcg_box[fname])
         else: print('imgrcg_box',fname,'Does not exist!!')
  
-    #获取有目标检测数据的80个类别的名称
+    #获取有目标检测数据的80个类别的名称     name => id
     all_cata_list = list(all_catas)
     all_cata_dict = {}
     for i in range(len(all_cata_list)):

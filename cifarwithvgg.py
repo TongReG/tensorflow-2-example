@@ -15,7 +15,8 @@ try : #如果模型存在则直接预加载，不再训练
     fc_net = tf.keras.models.load_model('cifar10_vgg13fc.h5')
     VGG13STATE = True
     print('\nVGG13 Model Load Successful.\n')
-except :
+except Exception as e :
+    print("\nException catched as : %s" % e)
     print('\nVGG13 Model Load failed ! Restart training steps.\n')
     VGG13STATE = False
 
@@ -27,8 +28,8 @@ def preprocess(x,y):
 
 batchsize = 128
 (train_images, train_labels),(test_images, test_labels) = tf.keras.datasets.cifar10.load_data()
-#(train_images, train_labels),(test_images, test_labels) = tf.keras.datasets.cifar100.load_data()
-
+#(train_images, train_labels),(test_images, test_labels) =
+#tf.keras.datasets.cifar100.load_data()
 train_label_s = tf.squeeze(train_labels,axis=1)
 test_label_s = tf.squeeze(test_labels,axis=1)
 # print(x_train.shape,y_train.shape,x_test.shape,y_test.shape)
@@ -103,7 +104,8 @@ try:
     checkpoint_vgg13fc.restore(ckptmngr_vgg13fc.latest_checkpoint)
     print('\nVGG13 checkpoint Load Successful.\n')
     vgg13_restorestate = True
-except:
+except Exception as ex:
+    print("\nException catched as : %s" % ex)
     print('\nVGG13 checkpoint Load Failed.\n')
     vgg13_restorestate = False
     ckpt_num = 0
@@ -189,10 +191,11 @@ ckpt_num = int(ckpt_num[0])
 try:
     #os.path.join("vgg16/",ckpt_dir)
     vgg16_reload = tf.keras.models.load_model(checkpoint_vgg16path)
-    print('\nVGG16 Latest PB data Load Success. Use PB model Now.\n')
+    print('\nVGG16 Latest PB data Load Success. Restore from PB model Now.\n')
     vgg16_reload.summary()
     vgg16_reloadstate = True
-except:     
+except Exception as exc:
+    print("\nException catched as : %s" % exc)
     print('\nVGG16 Latest PB data Load Failed! Restart training steps.\n')
     vgg16_reloadstate = False
     ckpt_num = 0
@@ -205,6 +208,8 @@ cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_vgg16path,
                                                  save_freq='epoch',
                                                  mode='auto',
                                                  patience=2)
+csvlog = tf.keras.callbacks.CSVLogger("vgg16/traincsv.log", separator=',', append=False)
+
 if not vgg16_reloadstate:
     vgg16_layers = [tf.keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3), kernel_regularizer=tf.keras.regularizers.l2(weight_decay)),
         tf.keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same', kernel_regularizer = tf.keras.regularizers.l2(weight_decay)),
@@ -257,13 +262,13 @@ if vgg16_reloadstate == False:
     vgg16_model.compile(loss='sparse_categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
     vgg16_model.fit(train_images, train_labels,
           epochs=epoch_num,
-          callbacks=[change_lr, cp_callback],
+          callbacks=[change_lr, cp_callback, csvlog],
           validation_data=(test_images, test_labels))
     large_loss, large_acc = vgg16_model.evaluate(x=test_images, y=test_labels, verbose=0)
 else:
     vgg16_reload.fit(train_images, train_labels,
           epochs=epoch_num - ckpt_num,
-          callbacks=[change_lr, cp_callback],
+          callbacks=[change_lr, cp_callback, csvlog],
           validation_data=(test_images, test_labels))
     large_loss, large_acc = vgg16_reload.evaluate(x=test_images, y=test_labels, verbose=0)
 
@@ -274,9 +279,10 @@ print('\nCIFAR10 VGG16 val_loss/accurary:', large_loss, large_acc)
 #print('\nCIFAR100 VGG13 val_loss/accurary:' , test_loss, test_acc)
 #print('\nCIFAR100 VGG16 val_loss/accurary:', large_loss, large_acc)
 
-
 if vgg16_reloadstate == False:
     vgg16_model.save('cifar10_vgg16.h5')
+    #vgg16_model.save('cifar100_vgg16.h5')
 else:
     vgg16_reload.save('cifar10_vgg16.h5')
+    #vgg16_reload.save('cifar100_vgg16.h5')
 

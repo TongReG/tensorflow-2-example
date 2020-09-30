@@ -66,10 +66,15 @@ def _parse_function(example_proto):
     image_standard = tf.image.per_image_standardization(image_decoded)
     image_train = tf.transpose(image_standard, perm=[2, 0, 1])
 
-    xmin = tf.cast(parsed_features["bbox_xmin"], tf.int64)
-    xmax = tf.cast(parsed_features["bbox_xmax"], tf.int64)
-    ymin = tf.cast(parsed_features["bbox_ymin"], tf.int64)
-    ymax = tf.cast(parsed_features["bbox_ymax"], tf.int64)
+    xmin = tf.expand_dims(parsed_features["bbox_xmin"].values, 0)
+    xmax = tf.expand_dims(parsed_features["bbox_xmax"].values, 0)
+    ymin = tf.expand_dims(parsed_features["bbox_ymin"].values, 0)
+    ymax = tf.expand_dims(parsed_features["bbox_ymax"].values, 0)
+
+    xmin = tf.cast(xmin, tf.int64)
+    xmax = tf.cast(xmax, tf.int64)
+    ymin = tf.cast(ymin, tf.int64)
+    ymax = tf.cast(ymax, tf.int64)
 
     bbox = tf.concat(axis=0, values=[xmin, xmax, ymin, ymax, label])
     bbox = tf.transpose(bbox, [1, 0])
@@ -82,7 +87,7 @@ if __name__ == '__main__':
     coco_train = pycocotools.coco.COCO(path_instances)
     COCO_CLASSES = coco_train.dataset['categories']
     train_ids = list(coco_train.imgToAnns.keys())
-    print(train_ids)
+    print(COCO_CLASSES)
     #if len(self.ids) == 0: # 如果没有标签或者不需要GT，则直接使用image
     #    train_ids = list(coco_train.imgs.keys())
 
@@ -99,13 +104,13 @@ if __name__ == '__main__':
     trainimg_path = []
     i = 1
     total = len(train_images_filenames)
-    for image_names in train_images_filenames:
-        if int(image_names[:-4]) in trainimg_ids:
-            trainimg_path.append(img_path + ',' + image_names)
-        if i % 100 == 0 or i == total:
-            print('Processing image list %i of %i\r' % (i, total))
-        i += 1
-    random.shuffle(trainimg_path)
+    #for image_names in train_images_filenames:
+    #    if int(image_names[:-4]) in trainimg_ids:
+    #        trainimg_path.append(img_path + ',' + image_names)
+    #    if i % 1000 == 0 or i == total:
+    #        print('Processing image list %i of %i\r' % (i, total))
+    #    i += 1
+    #random.shuffle(trainimg_path)
  
 
     batch_size = 32
@@ -145,24 +150,25 @@ if __name__ == '__main__':
     #x = tf.keras.applications.vgg16.preprocess_input(x)
 
     train_files = tf.data.Dataset.list_files("coco_record/*.tfrecord")
-    dataset_train = train_files.interleave(tf.data.TFRecordDataset, cycle_length=4, num_parallel_calls=cores)
+    dataset_train = train_files.interleave(tf.data.TFRecordDataset, cycle_length=4, num_parallel_calls=4)
     dataset_train = dataset_train.shuffle(buffer_size=int(len(trainimg_ids) / batch_size))
     dataset_train = dataset_train.map(_parse_function, num_parallel_calls=cores)
+    # padded shape must fit parse output
     dataset_train = dataset_train.padded_batch(batch_size, \
                                                 padded_shapes=([None,None], \
-                                                [None, None, None], \
                                                 [None, None, None], \
                                                 [None, None, None]))
     dataset_train = dataset_train.prefetch(batch_size)
     # https://tensorflow.google.cn/api_docs/python/tf/data/Iterator
     iterator = iter(dataset_train)
     count = 0
-    bbox_run, images_train, images_decode = [],[],[]
+    bbox_run, images_train, images_decode = [0 for x in range (0,total)],[0 for x in range (0,total)],[0 for x in range (0,total)]
     try:
         while True:
             bbox_run[count], images_train[count], images_decode[count] = iterator.get_next()
             count += 1
-    except StopIteration:
+    except Exception as exc:
+        print("Exception catched as : %s" % ex)
         print('\n遍历结束,迭代次数为',count,'\n')
  
     #验证数据
