@@ -4,6 +4,7 @@ import re
 import time
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉可以调用GPU，不注释时使用CPU
 # tf.random.set_seed(2345)
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
@@ -25,6 +26,27 @@ def preprocess(x,y):
     x = tf.cast(x,dtype=tf.float32) / 255.
     y = tf.cast(y,dtype=tf.int32)
     return x,y
+
+#训练后生成图表
+def drawLine(arr, xName, yName, title, graduate):
+    # 横坐标 采用列表表达式
+    x = [x + 1 for x in range(len(arr))]
+    # 纵坐标
+    y = arr
+    # 生成折线图：函数polt
+    pyplot.plot(x, y)
+    # 设置横坐标说明
+    pyplot.xlabel(xName)
+    # 设置纵坐标说明
+    pyplot.ylabel(yName)
+    # 添加标题
+    pyplot.title(title)
+    # 设置纵坐标刻度
+    pyplot.yticks(graduate)
+    # 显示网格
+    pyplot.grid(True)
+    # 显示图表
+    pyplot.show()
 
 batchsize = 128
 (train_images, train_labels),(test_images, test_labels) = tf.keras.datasets.cifar10.load_data()
@@ -182,12 +204,11 @@ if not os.path.exists("vgg16/"):
 
 checkpoint_vgg16path = "vgg16/weights"
 #checkpoint_vgg16path = "vgg16/weights.{epoch:02d}"
-checkpoint_vgg16dir = os.listdir("vgg16/")
-for iters in checkpoint_vgg16dir:
-    ckpt_num = re.findall(r"\d+\.?\d*",iters)
-    ckpt_dir = iters
-ckpt_num = int(ckpt_num[0])
-
+#checkpoint_vgg16dir = os.listdir("vgg16/")
+#for iters in checkpoint_vgg16dir:
+#    ckpt_num = re.findall(r"\d+\.?\d*",iters)
+#    ckpt_dir = iters
+#ckpt_num = int(ckpt_num[0])
 try:
     #os.path.join("vgg16/",ckpt_dir)
     vgg16_reload = tf.keras.models.load_model(checkpoint_vgg16path)
@@ -208,7 +229,33 @@ cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_vgg16path,
                                                  save_freq='epoch',
                                                  mode='auto',
                                                  patience=2)
-csvlog = tf.keras.callbacks.CSVLogger("vgg16/traincsv.log", separator=',', append=False)
+# https://tensorflow.google.cn/api_docs/python/tf/keras/callbacks/CSVLogger
+csvlog = tf.keras.callbacks.CSVLogger("vgg16/traincsv.log", separator=',', append=True)
+
+EpochArr = []
+AccArr, valAccArr = []
+tlossArr, valossArr = []
+if os.path.exists("vgg16/traincsv.log"):
+    graduate = []
+    logf = open("vgg16/traincsv.log", "r", encoding='utf-8')
+    for lines in logf.readlines(): # 遍历每一行
+        ckpt = lines.split(',')
+        EpochArr.append(int(ckpt[0]))
+        AccArr.append(float(ckpt[1]))
+        tlossArr.append(float(ckpt[2]))
+        valAccArr.append(float(ckpt[3]))
+        valossArr.append(float(ckpt[4]))
+    logf.close()
+    graduate = []
+    deGraduate = 5
+    # 计算y的刻度值
+    for i in range(len(tlossArr)):
+        if i * deGraduate < max(tlossArr) + deGraduate:
+            graduate.append(i * deGraduate)
+    ckpt_num = max(EpochArr)
+    drawLine(tlossArr, "Epoches", "Loss", "Loss function curve", graduate)
+    drawLine(AccArr, "Epoches", "Accuracy", "Accuracy function curve", [0, 0.25, 0.5, 0.75, 1])
+else: ckpt_num = 0
 
 if not vgg16_reloadstate:
     vgg16_layers = [tf.keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3), kernel_regularizer=tf.keras.regularizers.l2(weight_decay)),
@@ -278,7 +325,6 @@ print('\nCIFAR10 VGG13 val_loss/accurary:' , test_loss, test_acc)
 print('\nCIFAR10 VGG16 val_loss/accurary:', large_loss, large_acc)
 #print('\nCIFAR100 VGG13 val_loss/accurary:' , test_loss, test_acc)
 #print('\nCIFAR100 VGG16 val_loss/accurary:', large_loss, large_acc)
-
 if vgg16_reloadstate == False:
     vgg16_model.save('cifar10_vgg16.h5')
     #vgg16_model.save('cifar100_vgg16.h5')
