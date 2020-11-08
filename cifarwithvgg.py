@@ -4,7 +4,7 @@ import re
 import time
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot
+from matplotlib import pyplot
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉可以调用GPU，不注释时使用CPU
 # tf.random.set_seed(2345)
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
@@ -233,18 +233,21 @@ cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_vgg16path,
 csvlog = tf.keras.callbacks.CSVLogger("vgg16/traincsv.log", separator=',', append=True)
 
 EpochArr = []
-AccArr, valAccArr = []
-tlossArr, valossArr = []
+AccArr, valAccArr = [], []
+tlossArr, valossArr = [], []
 if os.path.exists("vgg16/traincsv.log"):
     graduate = []
     logf = open("vgg16/traincsv.log", "r", encoding='utf-8')
+    firstline = True
     for lines in logf.readlines(): # 遍历每一行
         ckpt = lines.split(',')
-        EpochArr.append(int(ckpt[0]))
-        AccArr.append(float(ckpt[1]))
-        tlossArr.append(float(ckpt[2]))
-        valAccArr.append(float(ckpt[3]))
-        valossArr.append(float(ckpt[4]))
+        if not firstline:
+            EpochArr.append(int(ckpt[0]))
+            AccArr.append(float(ckpt[1]))
+            tlossArr.append(float(ckpt[2]))
+            valAccArr.append(float(ckpt[3]))
+            valossArr.append(float(ckpt[4]))
+        firstline = False
     logf.close()
     graduate = []
     deGraduate = 5
