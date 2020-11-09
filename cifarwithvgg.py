@@ -28,25 +28,18 @@ def preprocess(x,y):
     return x,y
 
 #训练后生成图表
-def drawLine(arr, xName, yName, title, graduate):
-    # 横坐标 采用列表表达式
-    x = [x + 1 for x in range(len(arr))]
-    # 纵坐标
-    y = arr
-    # 生成折线图：函数polt
-    pyplot.plot(x, y)
-    # 设置横坐标说明
-    pyplot.xlabel(xName)
-    # 设置纵坐标说明
-    pyplot.ylabel(yName)
-    # 添加标题
-    pyplot.title(title)
-    # 设置纵坐标刻度
-    pyplot.yticks(graduate)
-    # 显示网格
-    pyplot.grid(True)
-    # 显示图表
-    pyplot.show()
+def drawLine(arr, arr2, xName, yName, title, graduate):
+    x = [x + 1 for x in range(len(arr))] # 横坐标 采用列表表达式
+    y, y2 = arr, arr2                   # 纵坐标
+    pyplot.plot(x, y, label="train")    # 生成折线图
+    pyplot.plot(x, y2, label="val")
+    pyplot.xlabel(xName)                # 设置横坐标说明
+    pyplot.ylabel(yName)                # 设置纵坐标说明
+    pyplot.legend()
+    pyplot.title(title)                 # 添加标题
+    pyplot.yticks(graduate)             # 设置纵坐标刻度
+    pyplot.grid(True)                   # 显示网格
+    pyplot.show()                       # 显示图表
 
 batchsize = 128
 (train_images, train_labels),(test_images, test_labels) = tf.keras.datasets.cifar10.load_data()
@@ -196,7 +189,7 @@ weight_decay = 5e-4
 dropout_rate = 0.5
 batch_size = 128
 learning_rate = 1e-2
-epoch_num = 30
+epoch_num = 40
 
 if not os.path.exists("vgg16/"):
         os.makedirs("vgg16/")
@@ -239,6 +232,7 @@ if os.path.exists("vgg16/traincsv.log"):
     graduate = []
     logf = open("vgg16/traincsv.log", "r", encoding='utf-8')
     firstline = True
+    cnt = 0
     for lines in logf.readlines(): # 遍历每一行
         ckpt = lines.split(',')
         if not firstline:
@@ -248,6 +242,7 @@ if os.path.exists("vgg16/traincsv.log"):
             valAccArr.append(float(ckpt[3]))
             valossArr.append(float(ckpt[4]))
         firstline = False
+        cnt = cnt + 1
     logf.close()
     graduate = []
     deGraduate = 5
@@ -255,9 +250,9 @@ if os.path.exists("vgg16/traincsv.log"):
     for i in range(len(tlossArr)):
         if i * deGraduate < max(tlossArr) + deGraduate:
             graduate.append(i * deGraduate)
-    ckpt_num = max(EpochArr)
-    drawLine(tlossArr, "Epoches", "Loss", "Loss function curve", graduate)
-    drawLine(AccArr, "Epoches", "Accuracy", "Accuracy function curve", [0, 0.25, 0.5, 0.75, 1])
+    ckpt_num = cnt # ckpt_num = max(EpochArr)
+    drawLine(tlossArr, valossArr, "Epoches", "(val)Loss", "Loss function curve", graduate)
+    drawLine(AccArr, valAccArr, "Epoches", "(val)Accuracy", "Accuracy function curve", [0, 0.25, 0.5, 0.75, 1])
 else: ckpt_num = 0
 
 if not vgg16_reloadstate:

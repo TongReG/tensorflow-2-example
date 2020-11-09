@@ -2,7 +2,7 @@
 #你需要先下载COCO 2017数据集并放入本仓库根目录下，或手动更改path
 #然后手动运行coco_init.py以生成TFRECORD文件集，大小约15GB
 #本文件将读取TFRECORD，以加载数据
-import os
+import os, platform
 import time
 import random
 from multiprocessing import Process, Queue, cpu_count, freeze_support
@@ -13,6 +13,12 @@ import matplotlib.pyplot as plt
 import matplotlib
 import pycocotools.coco
 import cv2
+
+if platform.system() == 'Linux':
+    import resource
+    def limit_memory(maxsize):
+        soft, hard = resource.getrlimit(resource.RLIMIT_AS)
+        resource.setrlimit(resource.RLIMIT_AS, (maxsize, hard))
 
 #object instances（目标实例）object keypoints（目标上的关键点）image captions（看图说话）
 #pycocotools几个常用API
@@ -168,7 +174,7 @@ if __name__ == '__main__':
             bbox_run[count], images_train[count], images_decode[count] = iterator.get_next()
             count += 1
     except Exception as exc:
-        print("Exception catched as : %s" % ex)
+        print("Exception catched as : %s" % exc)
         print('\n遍历结束,迭代次数为',count,'\n')
  
     #验证数据
