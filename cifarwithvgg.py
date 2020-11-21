@@ -134,7 +134,7 @@ for epoch in range(ckpt_num, epoch_num):
     elapsed_epoch = 0.0
     for step,(x,y) in enumerate(train_data): #one epoch has 50000 photos, steps = 50000/batchsize
         if flag == 1:
-            start = time.clock()
+            start = time.perf_counter()
             flag = 0
         with tf.GradientTape() as tape:
             out = vgg13_net(x)
@@ -146,7 +146,7 @@ for epoch in range(ckpt_num, epoch_num):
         grads = tape.gradient(loss,variables)   #计算梯度
         optimizer.apply_gradients(zip(grads,variables))  #更新梯度
         if step % 8 == 0:
-            elapsed = (time.clock() - start)
+            elapsed = (time.perf_counter() - start)
             elapsed_epoch += elapsed
             flag = 1
             print('Epoch:',epoch,'Step:',step,'datas:',step * batchsize,'loss:','%.4f' % float(loss))

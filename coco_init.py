@@ -32,8 +32,12 @@ import pycocotools.coco
 path_keypoints = 'annotations/person_keypoints_train2017.json'
 path_instances = 'annotations/instances_train2017.json'
 path_captions = 'annotations/captions_train2017.json'
+val_keypoints = 'annotations/person_keypoints_val2017.json'
+val_instances = 'annotations/instances_val2017.json'
+val_captions = 'annotations/captions_val2017.json'
 #COCO训练集的图像数据保存的目录
 img_path = 'train2017/'
+val_path = 'val2017/'
 catas_dict = {}
 imgrcg_box = {}
 cores = int(cpu_count() / 2)   #定义用到的CPU处理的核心数
@@ -232,30 +236,44 @@ def process_in_queues(namelist, cores, targetfolder):
 
 if __name__ == '__main__':
     freeze_support()
+
+    # Default load is instances, you can change the path to keypoints or
+    # captions.
     coco_train = pycocotools.coco.COCO(path_instances)
+    coco_val = pycocotools.coco.COCO(val_instances)
+
     COCO_CLASSES = coco_train.dataset['categories']
+    
     train_ids = list(coco_train.imgToAnns.keys())
+    val_ids = list(coco_val.imgToAnns.keys())
     #if len(self.ids) == 0: # 如果没有标签或者不需要GT，则直接使用image
     #    train_ids = list(coco_train.imgs.keys())
 
-    # display COCO categories and supercategories  id => name
+    # Display COCO categories and supercategories.  id ==> name
     catas = coco_train.loadCats(coco_train.getCatIds())
     for cata in catas:
         catas_dict[cata['id']] = cata['name']
   
-    #获取COCO数据集中所有图像的ID,构建训练集文件列表，里面的每个元素是路径名+图片文件名
+    # 获取COCO数据集中所有图像的ID,构建训练集文件列表，里面的每个元素是路径名+图片文件名
     trainimg_ids = coco_train.getImgIds()
-    print('trainimg_NUMBERS =>',len(trainimg_ids))
+    valimg_ids = coco_val.getImgIds()
+
+    print('trainimg_IDNUMBERS =>',len(trainimg_ids),'valimg_IDNUMBERS =>',len(valimg_ids))
+
     train_images_filenames = os.listdir(img_path)
-    #查找训练集的图片是否都有对应的ID，并保存到一个列表中
-    trainimg_path = []
+    val_images_filenames = os.listdir(val_path)
+
+    # 查找训练集的图片是否都有对应的ID，并保存到一个列表中
+    trainimg_path, valimg_path = [], []
     i = 1
-    total = len(train_images_filenames)
+    num_train = len(train_images_filenames)
+    num_val = len(val_images_filenames)
+    print('trainimg_NUMBERS =>',num_train,'valimg_NUMBERS =>',num_val)
     for image_names in train_images_filenames:
         if int(image_names[:-4]) in trainimg_ids:
             trainimg_path.append(img_path + ',' + image_names)
-        if i % 100 == 0 or i == total:
-            print('Processing image list %i of %i\r' % (i, total))
+        if i % 100 == 0 or i == num_train:
+            print('Processing image list %i of %i\r' % (i, num_train))
         i += 1
     random.shuffle(trainimg_path)
  
@@ -284,7 +302,7 @@ if __name__ == '__main__':
             print('imgrcg_box',fname,'=>',imgrcg_box[fname])
         else: print('imgrcg_box',fname,'Does not exist!!')
  
-    #获取有目标检测数据的80个类别的名称     name => id
+    #获取有目标检测数据的80个类别的名称 name => id
     all_cata_list = list(all_catas)
     all_cata_dict = {}
     for i in range(len(all_cata_list)):

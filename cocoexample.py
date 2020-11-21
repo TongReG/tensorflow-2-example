@@ -2,7 +2,9 @@
 #你需要先下载COCO 2017数据集并放入本仓库根目录下，或手动更改path
 #然后手动运行coco_init.py以生成TFRECORD文件集，大小约15GB
 #本文件将读取TFRECORD，以加载数据
-import os, platform
+import os
+import sys
+import platform
 import time
 import random
 from multiprocessing import Process, Queue, cpu_count, freeze_support
@@ -86,7 +88,57 @@ def _parse_function(example_proto):
     bbox = tf.transpose(bbox, [1, 0])
     
     return bbox, image_train, image_decoded
- 
+
+def NNAPI(str):
+    # https://tensorflow.google.cn/api_docs/python/tf/keras/applications
+    # https://keras.io/zh/applications/#applications
+    if str == "vgg16":
+        std_vgg16 = tf.keras.applications.vgg16.VGG16(weights='imagenet', 
+                                                  include_top=False, 
+                                                  pooling=max,
+                                                  classifier_activation='softmax')
+        return std_vgg16
+    elif str == "vgg19":
+        std_vgg19 = tf.keras.applications.vgg19.VGG19(weights='imagenet', 
+                                                  include_top=True, 
+                                                  classifier_activation='softmax')
+        return std_vgg19
+    elif str == "mobilenet":
+        std_mnet = tf.keras.applications.mobilenet.MobileNet(weights='imagenet',
+                                                         dropout=1e-3,
+                                                         include_top=False,
+                                                         classifier_activation='softmax')
+        return std_mnet
+    elif str == "mobilenetv2":
+        std_mnetv2 = tf.keras.applications.mobilenet_v2.MobileNetV2(weights='imagenet',
+                                                                include_top=False,
+                                                                classifier_activation='softmax')
+        return std_mnetv2
+    elif str == "ResNet50":
+        std_res50 = tf.keras.applications.resnet50.ResNet50(include_top=True, 
+                                                        weights='imagenet')
+        return std_res50
+    elif str == "ResNet50v2":
+        std_res50v2 = tf.keras.applications.resnet_v2.ResNet50V2(include_top=True,
+                                                             weights='imagenet',
+                                                             classifier_activation='softmax')
+        return std_res50v2
+    elif str == "ResNet152v2":
+        std_res152v2 = tf.keras.applications.resnet_v2.ResNet152V2(include_top=True,
+                                                               weights='imagenet',
+                                                               classifier_activation='softmax')
+        return std_res152v2
+    elif str == "Inceptionv3":
+        std_incv3 = tf.keras.applications.inception_v3.InceptionV3(include_top=True, 
+                                                               weights='imagenet',
+                                                               classifier_activation='softmax')
+        return std_incv3
+    elif str == "Inceptionv4":
+        std_incv4 = tf.keras.applications.InceptionResNetV2(include_top=True, weights='imagenet', classifier_activation='softmax')
+        return std_incv4
+    else: 
+        print('\nNo that Neural Network NAME SUPPORTED, WILL EXIT.','\n')
+        sys.exit(1)
 
 if __name__ == '__main__':
     freeze_support()
@@ -119,35 +171,8 @@ if __name__ == '__main__':
     #random.shuffle(trainimg_path)
  
 
-    batch_size = 32
-    # https://tensorflow.google.cn/api_docs/python/tf/keras/applications
-    # https://keras.io/zh/applications/#applications
-    std_vgg16 = tf.keras.applications.vgg16.VGG16(weights='imagenet', 
-                                                  include_top=False, 
-                                                  pooling=max,
-                                                  classifier_activation='softmax')
-    std_vgg19 = tf.keras.applications.vgg19.VGG19(weights='imagenet', 
-                                                  include_top=True, 
-                                                  classifier_activation='softmax')
-    std_mnet = tf.keras.applications.mobilenet.MobileNet(weights='imagenet',
-                                                         dropout=1e-3,
-                                                         include_top=False,
-                                                         classifier_activation='softmax')
-    std_mnetv2 = tf.keras.applications.mobilenet_v2.MobileNetV2(weights='imagenet',
-                                                                include_top=False,
-                                                                classifier_activation='softmax')
-    std_res50 = tf.keras.applications.resnet50.ResNet50(include_top=True, 
-                                                        weights='imagenet')
-    std_res50v2 = tf.keras.applications.resnet_v2.ResNet50V2(include_top=True,
-                                                             weights='imagenet',
-                                                             classifier_activation='softmax')
-    std_res152v2 = tf.keras.applications.resnet_v2.ResNet152V2(include_top=True,
-                                                               weights='imagenet',
-                                                               classifier_activation='softmax')
-    std_incv3 = tf.keras.applications.inception_v3.InceptionV3(include_top=True, 
-                                                               weights='imagenet',
-                                                               classifier_activation='softmax')
-    std_incv4 = tf.keras.applications.InceptionResNetV2(include_top=True, weights='imagenet', classifier_activation='softmax')
+    batch_size = 128
+    
 
     #img = tf.keras.preprocessing.image.load_img(img_path, target_size=(224,
     #224))
@@ -168,7 +193,8 @@ if __name__ == '__main__':
     # https://tensorflow.google.cn/api_docs/python/tf/data/Iterator
     iterator = iter(dataset_train)
     count = 0
-    bbox_run, images_train, images_decode = [0 for x in range (0,total)],[0 for x in range (0,total)],[0 for x in range (0,total)]
+    # total = int(total / 8)
+    bbox_run, images_train, images_decode = [0 for x in range(0,total)],[0 for x in range(0,total)],[0 for x in range(0,total)]
     try:
         while True:
             bbox_run[count], images_train[count], images_decode[count] = iterator.get_next()
@@ -184,4 +210,22 @@ if __name__ == '__main__':
     for i in range(image_bbox.shape[0]):
         cv2.rectangle(image, (image_bbox[i][0],image_bbox[i][2]), (image_bbox[i][1],image_bbox[i][3]), (0,255,0), 2)
     plt.imshow(image)
+
+    if not os.path.exists("coco_cache/"):
+        os.makedirs("coco_cache/")
+        os.makedirs("coco_cache/weights")
+    csvlog = tf.keras.callbacks.CSVLogger("coco_cache/traincsv.log", separator=',', append=True)
+    cp_callback = tf.keras.callbacks.ModelCheckpoint("coco_cache/weights",
+                                                 verbose=0, 
+                                                 save_best_only=False, 
+                                                 save_weights_only=False, 
+                                                 save_freq='epoch',
+                                                 mode='auto',
+                                                 patience=2)
+
+    netmodel = NNAPI("vgg16")
+    netmodel.fit(x=images_train, y=bbox_run, 
+                 epochs=50,
+                 callbacks=[cp_callback,csvlog],
+                 validation_data=None)
 
