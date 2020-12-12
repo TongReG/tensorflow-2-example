@@ -46,9 +46,9 @@ else:
         print("IsBuiltWithROCm ==> " + str(tf.test.is_built_with_rocm()))
         print("IsBuiltWithXLA ==> " + str(tf.test.is_built_with_xla()))
 
-printdiv("USING tf.config API")
-Gdv = tf.config.list_physical_devices('GPU')
-print("GPUDevices ==> " , Gdv)
+#printdiv("USING tf.config API")
+#Gdv = tf.config.list_physical_devices('GPU')
+#print("GPUDevices ==> " , Gdv)
 
 printdiv("LIST ALL LOCAL DEVICES")
 # 列出所有的本地机器设备
@@ -59,6 +59,9 @@ try:
         print(names)
 except Exception as e:
     print("Exception catched as : %s" % e)
-    tf.config.list_physical_devices()
+    gpus = tf.config.list_physical_devices(device_type='GPU')
+    cpus = tf.config.list_physical_devices(device_type='CPU')
+    print("GPUDevices ==>", gpus)
+    print("CPUDevices ==>", cpus)
     
 

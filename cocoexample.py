@@ -223,9 +223,42 @@ if __name__ == '__main__':
                                                  mode='auto',
                                                  patience=2)
 
+    EpochArr = []
+    AccArr, valAccArr = [], []
+    tlossArr, valossArr = [], []
+    if os.path.exists("coco_cache/traincsv.log"):
+        graduate = []
+        logf = open("coco_cache/traincsv.log", "r", encoding='utf-8')
+        firstline = True
+        cnt = 0
+        for lines in logf.readlines(): # 遍历每一行
+            ckpt = lines.split(',')
+            if not firstline:
+                EpochArr.append(int(ckpt[0]))
+                AccArr.append(float(ckpt[1]))
+                tlossArr.append(float(ckpt[2]))
+                valAccArr.append(float(ckpt[3]))
+                valossArr.append(float(ckpt[4]))
+            firstline = False
+            cnt = cnt + 1
+        logf.close()
+        graduate = []
+        deGraduate = 5
+        # 计算y的刻度值
+        for i in range(len(tlossArr)):
+            if i * deGraduate < max(tlossArr) + deGraduate:
+                graduate.append(i * deGraduate)
+        ckpt_num = cnt # ckpt_num = max(EpochArr)
+        drawLine(tlossArr, valossArr, "Epoches", "(val)Loss", "Loss function curve", graduate)
+        drawLine(AccArr, valAccArr, "Epoches", "(val)Accuracy", "Accuracy function curve", [0, 0.25, 0.5, 0.75, 1])
+    else: ckpt_num = 0
+
+    adam = tf.keras.optimizers.Adam(learning_rate=0.001, amsgrad=False)
     netmodel = NNAPI("vgg16")
+    netmodel.compile(loss='sparse_categorical_crossentropy', optimizer=adam, metrics=['val_accuracy'])
     netmodel.fit(x=images_train, y=bbox_run, 
-                 epochs=50,
-                 callbacks=[cp_callback,csvlog],
+                 epochs=50 - ckpt_num,
+                 callbacks=[cp_callback, csvlog],
                  validation_data=None)
+    netmodel.summary()
 

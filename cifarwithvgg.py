@@ -304,7 +304,7 @@ sgd = tf.keras.optimizers.SGD(lr=learning_rate, momentum=0.9, nesterov=True)
 change_lr = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
 if vgg16_reloadstate == False:
-    vgg16_model.compile(loss='sparse_categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+    vgg16_model.compile(loss='sparse_categorical_crossentropy', optimizer=sgd, metrics=['val_accuracy'])
     vgg16_model.fit(train_images, train_labels,
           epochs=epoch_num,
           callbacks=[change_lr, cp_callback, csvlog],
