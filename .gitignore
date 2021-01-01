@@ -346,3 +346,5 @@ healthchecksdb
 /beginner.ipynb
 /cifar10_vgg13_batchsize256.h5
 /cifar10_vgg13fc_batchsize256.h5
+/mnetv2/weights
+/cifar100_mnetv2.h5

@@ -1,4 +1,4 @@
-#基础3 Keras搭建VGG13/16 训练CIFAR1O/100 自动保存恢复结果
+# 基础3 Keras搭建VGG13/16 训练CIFAR1O/100 自动保存恢复结果
 import os
 import re
 import time
@@ -21,13 +21,13 @@ except Exception as e :
     print('\nVGG13 Model Load failed ! Restart training steps.\n')
     VGG13STATE = False
 
-#预处理
+# 预处理
 def preprocess(x,y):
     x = tf.cast(x,dtype=tf.float32) / 255.
     y = tf.cast(y,dtype=tf.int32)
     return x,y
 
-#训练后生成图表
+# 训练后生成图表
 def drawLine(arr, arr2, xName, yName, title, graduate):
     x = [x + 1 for x in range(len(arr))] # 横坐标 采用列表表达式
     y, y2 = arr, arr2                   # 纵坐标
@@ -59,7 +59,7 @@ train_data = train_data.shuffle(buffer_size=1024).map(preprocess).batch(batchsiz
 test_data = tf.data.Dataset.from_tensor_slices((test_images, test_label_s))
 test_data = test_data.map(preprocess).batch(batchsize)
 
-#这一部分打印train_data的信息
+# 这一部分打印train_data的信息
 sample = next(iter(train_data))
 print('VGG13 BatchSize =',batchsize,'\n')
 print('sample:',sample[0].shape,sample[1].shape,
@@ -96,7 +96,7 @@ optimizer = tf.keras.optimizers.Adam(lr=1e-4)
 vgg13_net.summary()
 fc_net.summary()
 
-# 在文件名中包含周期数.  (使用 str.format) tf.train方式
+# 在文件名中包含周期数 (使用 str.format) tf.train方式
 checkpoint_vgg13 = tf.train.Checkpoint(model=vgg13_net, myOptimizer=optimizer)
 checkpoint_vgg13fc = tf.train.Checkpoint(model=fc_net, myOptimizer=optimizer)
 checkpoint_vgg13dir = os.path.dirname("vgg13/")
@@ -225,6 +225,7 @@ cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_vgg16path,
 # https://tensorflow.google.cn/api_docs/python/tf/keras/callbacks/CSVLogger
 csvlog = tf.keras.callbacks.CSVLogger("vgg16/traincsv.log", separator=',', append=True)
 
+# 绘制训练结果
 EpochArr = []
 AccArr, valAccArr = [], []
 tlossArr, valossArr = [], []
@@ -304,7 +305,7 @@ sgd = tf.keras.optimizers.SGD(lr=learning_rate, momentum=0.9, nesterov=True)
 change_lr = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
 if vgg16_reloadstate == False:
-    vgg16_model.compile(loss='sparse_categorical_crossentropy', optimizer=sgd, metrics=['val_accuracy'])
+    vgg16_model.compile(loss='sparse_categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
     vgg16_model.fit(train_images, train_labels,
           epochs=epoch_num,
           callbacks=[change_lr, cp_callback, csvlog],

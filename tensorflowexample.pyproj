@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>84430f31-c3b9-4e5c-8990-6f68b6dfb980</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>cifarwithvgg.py</StartupFile>
+    <StartupFile>cifarwithmnet.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -38,6 +38,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="coco_init.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="cifarwithmnet.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="regression.py">

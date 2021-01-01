@@ -41,9 +41,9 @@ val_path = 'val2017/'
 catas_dict = {}
 imgrcg_box = {}
 cores = int(cpu_count() / 2)   #定义用到的CPU处理的核心数
-if cores >= 6:
-    cores = 6
-max_num = 2048   #每个TFRECORD文件包含的最多的图像数
+if cores >= 4:
+    cores = 4
+max_num = 256   #每个TFRECORD文件包含的最多的图像数，这里不建议超过1024
 
 #COCO_CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
 #                'train', 'truck', 'boat', 'traffic light', 'fire hydrant',

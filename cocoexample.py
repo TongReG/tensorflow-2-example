@@ -42,7 +42,7 @@ imgrcg_box = {}
 cores = int(cpu_count() / 2)   #定义用到的CPU处理的核心数
 if cores >= 6:
     cores = 6
-max_num = 2048   #每个TFRECORD文件包含的最多的图像数
+max_num = 256   #每个TFRECORD文件包含的最多的图像数
 
 
 #解析TFRECORD文件 https://juejin.im/post/6844903760699850765
@@ -72,7 +72,7 @@ def _parse_function(example_proto):
     image_decoded = tf.image.convert_image_dtype(image_raw, tf.float32)
 
     image_standard = tf.image.per_image_standardization(image_decoded)
-    image_train = tf.transpose(image_standard, perm=[2, 0, 1])
+    # image_train = tf.transpose(image_standard, perm=[2, 0, 1])
 
     xmin = tf.expand_dims(parsed_features["bbox_xmin"].values, 0)
     xmax = tf.expand_dims(parsed_features["bbox_xmax"].values, 0)
@@ -161,7 +161,8 @@ if __name__ == '__main__':
     #查找训练集的图片是否都有对应的ID，并保存到一个列表中
     trainimg_path = []
     i = 1
-    total = len(train_images_filenames)
+    total = len(train_images_filenames) / len(os.listdir("coco_record"))
+    total = np.math.ceil(total / 128)
     #for image_names in train_images_filenames:
     #    if int(image_names[:-4]) in trainimg_ids:
     #        trainimg_path.append(img_path + ',' + image_names)
@@ -205,11 +206,13 @@ if __name__ == '__main__':
  
     #验证数据
     imgdex = random.randint(0,count)     #select one image in the batch
-    image = images_decode[imgdex]
-    image_bbox = bbox_run[imgdex]
+    #默认读取为tf.Tensor需要转化为ndarray
+    image = tf.gather_nd(images_decode[0],[[imgdex]]).numpy()
+    image_bbox = tf.gather_nd(bbox_run[0],[[imgdex]]).numpy()
+    print(type(image),type(image_bbox))
     for i in range(image_bbox.shape[0]):
-        cv2.rectangle(image, (image_bbox[i][0],image_bbox[i][2]), (image_bbox[i][1],image_bbox[i][3]), (0,255,0), 2)
-    plt.imshow(image)
+        cv2.rectangle(image[0], (image_bbox[i][0],image_bbox[i][2]), (image_bbox[i][1],image_bbox[i][3]), (0,255,0), 2)
+    plt.imshow(image[0])
 
     if not os.path.exists("coco_cache/"):
         os.makedirs("coco_cache/")
