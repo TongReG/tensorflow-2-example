@@ -34,7 +34,7 @@ batchsize = 128
 train_data = tf.data.Dataset.from_tensor_slices((train_images, train_label_s))
 train_data = train_data.shuffle(buffer_size=1024).map(preprocess).batch(batchsize)
 test_data = tf.data.Dataset.from_tensor_slices((test_images, test_label_s))
-test_data = test_data.shuffle(buffer_size=1024).map(preprocess).batch(batchsize)
+test_data = test_data.map(preprocess).batch(batchsize)
 
 # 这一部分打印train_data的信息
 sample = next(iter(train_data))
@@ -46,7 +46,7 @@ print('sample:',sample[0].shape,sample[1].shape,
 std_mnetv2 = tf.keras.applications.mobilenet_v2.MobileNetV2(weights=None,
                                                             pooling='max',
                                                             input_shape=(32, 32, 3),
-                                                            include_top=True,
+                                                            alpha=0.5,                                                            include_top=True,
                                                             classes=100,
                                                             classifier_activation='softmax')
 
@@ -111,22 +111,35 @@ if os.path.exists("mnetv2/traincsv.log"):
     drawLine(AccArr, valAccArr, "Epoches", "(val)Accuracy", "Accuracy function curve", [0, 0.25, 0.5, 0.75, 1])
 else: ckpt_num = 0
 
+epoch_num = 150
+def scheduler(epoch):
+    lr_scheduler = []
+    lr = 1e-2
+    lr_scheduler.append(lr)
+    reduce_grad = 0.9
+    for i in range(0, epoch_num):
+        if i >= 1:
+            last_lr = lr_scheduler[i - 1] * reduce_grad
+            lr_scheduler.append(last_lr)
+    return lr_scheduler[epoch + ckpt_num]
+change_lr = tf.keras.callbacks.LearningRateScheduler(scheduler)
+
 # 建议学习率最好小于1e-3
-epoch_num = 125
 opt = tf.keras.optimizers.Adam(lr=1e-4)
+earlystop = tf.keras.callbacks.EarlyStopping(monitor='val_accurary', patience=30, verbose=1, mode='auto')
 std_mnetv2.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
 if reloadstate == False:
     std_mnetv2.fit(train_images, train_labels,
           epochs=epoch_num,
           batch_size=batchsize,
-          callbacks=[cp_callback, csvlog],
+          callbacks=[cp_callback, csvlog, change_lr, earlystop],
           validation_data=(test_images, test_labels))
     large_loss, large_acc = std_mnetv2.evaluate(x=test_images, y=test_labels, verbose=0)
 else:
     std_mnetv2.fit(train_images, train_labels,
           epochs=epoch_num - ckpt_num,
           batch_size=batchsize,
-          callbacks=[cp_callback, csvlog],
+          callbacks=[cp_callback, csvlog, earlystop],
           validation_data=(test_images, test_labels))
     large_loss, large_acc = std_mnetv2.evaluate(x=test_images, y=test_labels, verbose=0)
 

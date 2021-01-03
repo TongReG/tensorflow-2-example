@@ -87,7 +87,7 @@ def _parse_function(example_proto):
     bbox = tf.concat(axis=0, values=[xmin, xmax, ymin, ymax, label])
     bbox = tf.transpose(bbox, [1, 0])
     
-    return bbox, image_train, image_decoded
+    return bbox, image_standard, image_decoded
 
 def NNAPI(str):
     # https://tensorflow.google.cn/api_docs/python/tf/keras/applications
