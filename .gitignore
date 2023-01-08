@@ -338,13 +338,11 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+
+# 仓库本身排除的
 /vgg13fc
 /vgg13
 /vgg16
-/cifar10_vgg13fc.h5
-/cifar10_vgg13.h5
-/beginner.ipynb
-/cifar10_vgg13_batchsize256.h5
-/cifar10_vgg13fc_batchsize256.h5
 /mnetv2/weights
-/cifar100_mnetv2.h5
+*.h5
+*.ipynb
