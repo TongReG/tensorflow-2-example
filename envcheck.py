@@ -43,19 +43,23 @@ def buildInfo():
 def versionInfo():
     printdiv("TENSORFLOW VERSIONIFNO")
     tfversion = tf.__version__
-    tfcompilerversion = tf.__compiler_version__
-    tfgitversion = tf.__git_version__
     print("TensorFlow Version ==> " + tfversion)
-    print("Git Version ==> " + tfgitversion)
+    if hasattr(tf, "__git_version__"):
+        tfgitversion = tf.__git_version__
+        print("Git Version ==> " + tfgitversion)
+    tfcompilerversion = tf.__compiler_version__
     # tf.python has deperacated
-    try:
+    if hasattr(tf, "python"):
         print("Compiler Version ==> " +
               tf.python.framework.test_util.versions.__compiler_version__)
-    except:
+    else:
         print("Compiler Version ==> " + tfcompilerversion)
-    if tf.__cxx_version__ != None:
+    if hasattr(tf, '__cxx_version__'):
         tfcxxversion = str(tf.__cxx_version__)
         print("CXX Compiler Version ==> " + tfcxxversion)
+    if hasattr(tf, "__cxx11_abi_flag__"):
+        tfcxxflag = str(tf.__cxx11_abi_flag__)
+        print("CXX Flag ==> " + tfcxxflag)
 
 
 def showPath():
@@ -70,7 +74,8 @@ def showFeatures():
     if tfversion < '2.0.0':
         print("IsMklEnabled ==> " + str(tf.pywrap_tensorflow.IsMklEnabled()))
     else:
-        try:
+        # tf.python has deperacated
+        if hasattr(tf, "python"):
             print("IsBuiltWithNvcc ==> " +
                   str(tf.python.framework.test_util.IsBuiltWithNvcc()))
             print("IsBuiltWithROCm ==> " +
@@ -81,9 +86,7 @@ def showFeatures():
                   str(tf.python.framework.test_util.IsGoogleCudaEnabled()))
             print("IsMklEnabled ==> " +
                   str(tf.python.framework.test_util.IsMklEnabled()))
-        except Exception as e:
-            # tf.python has deperacated
-            # print("Exception catched as : %s" % e)
+        else:
             print("IsBuiltWithGPUSupport ==> " +
                   str(tf.test.is_built_with_gpu_support()))
             print("IsBuiltWithCUDA ==> " + str(tf.test.is_built_with_cuda()))
@@ -92,15 +95,15 @@ def showFeatures():
 
 
 def showDevicesFallBack():
+    # show CPUs
     printdiv("CPU DEVICES")
     Cdv = tf.config.list_physical_devices(device_type='CPU')
-    print(Cdv)
-    #
     if Cdv != None:
         for device in Cdv:
             print("{}: {}".format(device.device_type, device.name))
     else:
         print("Warning: No CPU Devices Available!")
+    # show GPUs
     printdiv("GPU DEVICES")
     Gdv = tf.config.list_physical_devices(device_type='GPU')
     if Gdv != []:
@@ -113,14 +116,13 @@ def showDevicesFallBack():
 def showDevices():
     printdiv("LIST ALL LOCAL DEVICES")
     # 列出所有的本地机器设备
-    try:
+    # tf.python has deperacated
+    if hasattr(tf, "python"):
         local_device_protos = tf.python.client.device_lib.list_local_devices()
         # 打印
         for names in local_device_protos:
             print(names)
-    except Exception as e:
-        # tf.python has deperacated
-        # print("Exception catched as : %s" % e)
+    else:
         showDevicesFallBack()
         tf.config.list_logical_devices()
 
