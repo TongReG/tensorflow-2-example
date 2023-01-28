@@ -1,11 +1,10 @@
 # check tensorflow enviroment info
 # Run it with "python envcheck.py" in shell
 import tensorflow as tf
-import os
 import platform
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行注释掉就是使用cpu，不注释就是使用gpu
 
-global division
+# division char...
+division = "=====" * 8
 
 
 def printdiv(str):
@@ -96,21 +95,21 @@ def showFeatures():
 
 def showDevicesFallBack():
     # show CPUs
-    printdiv("CPU DEVICES")
     Cdv = tf.config.list_physical_devices(device_type='CPU')
     if Cdv != None:
+        printdiv("CPU DEVICES")
         for device in Cdv:
             print("{}: {}".format(device.device_type, device.name))
     else:
-        print("Warning: No CPU Devices Available!")
+        printdiv("Warning: No CPU Devices Available!")
     # show GPUs
-    printdiv("GPU DEVICES")
     Gdv = tf.config.list_physical_devices(device_type='GPU')
     if Gdv != []:
+        printdiv("GPU DEVICES")
         for device in Gdv:
             print("GPUDevice ==> ", device)
     else:
-        print("No GPU Devices Available!")
+        printdiv("No GPU Devices Available!")
 
 
 def showDevices():
@@ -129,8 +128,6 @@ def showDevices():
 
 # main
 if __name__ == '__main__':
-
-    division = "=============================="
 
     sysInfo()
     buildInfo()
