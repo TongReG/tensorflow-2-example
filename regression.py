@@ -27,8 +27,8 @@ def load_DataSet(dataset_path):
 
     # 数据集中包括一些N/A值。为了保证例子的简单性，删除这些数据。
     dataset = raw_dataset.copy()
-    dataset.tail()
-    dataset = dataset.isna().sum().dropna()
+    dataset.tail().isna().sum()
+    dataset = dataset.dropna()
     return dataset
 
 
@@ -47,13 +47,13 @@ def show_Stats(dataset):
     train_stats = dataset.describe()
     train_stats.pop("MPG")
     train_stats = train_stats.transpose()
-    print(",".format(train_stats))
+    print(train_stats)
 
 
 def normalize(x):
     # 使用不同的尺度和范围对特征归一化是好的实践。
     # 尽管模型可能在没有特征归一化的情况下收敛，但它会使得模型训练更加复杂，并会造成生成的模型依赖输入所使用的单位选择。
-    train_stats = x.describe()
+    train_stats = x.describe().transpose()
     return (x - train_stats['mean']) / train_stats['std']
 
 
@@ -178,7 +178,6 @@ if __name__ == "__main__":
     test_predictions = model.predict(normed_test_data).flatten()
     # 绘制结果
     show_prediction(test_predictions, test_labels)
-
 
     # 我们来看下误差分布。
     error = test_predictions - test_labels
