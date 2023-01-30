@@ -59,18 +59,13 @@ def compile_and_fit(model, name, optimizer='adam', max_epochs=120):
 
     model.summary()
 
+    # steps_per_epoch 代表每个epoch被分割的步数，减少就意味着一次输入多个数据，加快训练速度。
     history = model.fit(train_images, train_labels,
                         epochs=max_epochs,
+                        steps_per_epoch=468,
                         validation_data=(test_images, test_labels),
                         callbacks=get_callbacks(name),
                         verbose=2)
-
-    # history = model.fit(train_images, train_labels,
-    #  steps_per_epoch = STEPS_PER_EPOCH,
-    #  epochs=max_epochs,
-    #  validation_data=validate_ds,
-    #  callbacks=get_callbacks(name),
-    #  verbose=2)
     return history
 
 
@@ -205,33 +200,42 @@ if __name__ == "__main__":
     # 将模型的各层堆叠起来，以搭建 tf.keras.Sequential 模型。为训练选择优化器和损失函数
     if not MODELSTATE:
         # 选择训练大模型或者小模型
-        choice = input("Training large model? (Y/N)")
-        if choice == "N":
-            model = std_model()
-            # 训练并验证模型
-            size_histories['Normal'] = compile_and_fit(model, 'sizes/Normal')
-            regularizer_histories['Normal'] = size_histories['Normal']
-            test_loss, test_sparse_categorical_crossentropy, test_acc = model.evaluate(
-                x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks('sizes/Normal'))
-            print('\nMNIST FASHION Normal sparse categorical crossentropy: ',
-                  test_sparse_categorical_crossentropy)
-            print('\nMNIST FASHION Normal val_loss/accurary: ',
-                  test_loss, test_acc)
-            # 保存模型
-            modelsave(model=model, is_large=False)
-        elif choice == "Y":
-            large_model = huge_model()
-            # 训练并验证模型
-            regularizer_histories['large'] = compile_and_fit(
-                large_model, "regularizers/large")
-            large_loss, large_sparse_categorical_crossentropy, large_acc = large_model.evaluate(
-                x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks("regularizers/large"))
-            print('\nMNIST FASHION Large sparse categorical crossentropy: ',
-                  large_sparse_categorical_crossentropy)
-            print('\nMNIST FASHION Large val_loss/accurary: ',
-                  large_loss, large_acc)
-            # 保存模型
-            modelsave(model=large_model, is_large=True)
+        while True:
+            choice = input("Training large model? (Y/N/Q): ")
+            if choice.upper() == "N":
+                model = std_model()
+                # 训练并验证模型
+                size_histories['Normal'] = compile_and_fit(
+                    model, 'sizes/Normal')
+                regularizer_histories['Normal'] = size_histories['Normal']
+                test_loss, test_sparse_categorical_crossentropy, test_acc = model.evaluate(
+                    x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks('sizes/Normal'))
+                print('\nMNIST FASHION Normal sparse categorical crossentropy: ',
+                      test_sparse_categorical_crossentropy)
+                print('\nMNIST FASHION Normal val_loss/accurary: ',
+                      test_loss, test_acc)
+                # 保存模型
+                modelsave(model=model, is_large=False)
+                break
+            elif choice.upper() == "Y":
+                large_model = huge_model()
+                # 训练并验证模型
+                regularizer_histories['large'] = compile_and_fit(
+                    large_model, "regularizers/large")
+                large_loss, large_sparse_categorical_crossentropy, large_acc = large_model.evaluate(
+                    x=test_images, y=test_labels, verbose=0, callbacks=get_callbacks("regularizers/large"))
+                print('\nMNIST FASHION Large sparse categorical crossentropy: ',
+                      large_sparse_categorical_crossentropy)
+                print('\nMNIST FASHION Large val_loss/accurary: ',
+                      large_loss, large_acc)
+                # 保存模型
+                modelsave(model=large_model, is_large=True)
+                break
+            elif choice.upper() == "Q":
+                exit()
+            else:
+                print("Please input Y or N...")
+                print("Input Q to Exit...")
 
     plotter = tfdocs.plots.HistoryPlotter(
         metric='sparse_categorical_crossentropy', smoothing_std=5)
@@ -241,6 +245,8 @@ if __name__ == "__main__":
     plt.xlim([0, max(plt.xlim())])
     plt.ylim([0, 2])
     plt.xlabel("Epochs [Log Scale]")
+    plt.ylabel("")
+    plt.show()
 
     plotter.plot(regularizer_histories)
     plt.ylim([0, 2])
