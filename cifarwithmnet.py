@@ -36,6 +36,18 @@ def drawLine(arr, arr2, xName, yName, title, graduate):
     pyplot.grid(True)                   # 显示网格
     pyplot.show()                       # 显示图表
 
+# 设置可变学习率，初始为0.001，每一个epoch依次减为上一个的0.9倍
+def scheduler(epoch):
+    lr_scheduler = []
+    lr = 1e-3
+    lr_scheduler.append(lr)
+    reduce_grad = 0.9
+    for i in range(0, epoch_num):
+        if i >= 1:
+            last_lr = lr_scheduler[i - 1] * reduce_grad
+            lr_scheduler.append(last_lr)
+    return lr_scheduler[epoch + ckpt_num]
+
 if __name__ == '__main__':
 
     configTFEnviron()
@@ -133,21 +145,12 @@ if __name__ == '__main__':
 
     epoch_num = 150
 
-    def scheduler(epoch):
-        lr_scheduler = []
-        lr = 1e-2
-        lr_scheduler.append(lr)
-        reduce_grad = 0.9
-        for i in range(0, epoch_num):
-            if i >= 1:
-                last_lr = lr_scheduler[i - 1] * reduce_grad
-                lr_scheduler.append(last_lr)
-        return lr_scheduler[epoch + ckpt_num]
-
+    # 使用变学习率的函数
     change_lr = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
     # 经测试，建议的学习率最好小于1e-3
-    opt = tf.keras.optimizers.Adam(lr=1e-4)
+    opt = tf.keras.optimizers.Adam(lr=1e-3)
+    # 设置提前停止，超过30个Epoch没有改善即停止训练
     earlystop = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', patience=30, verbose=1, mode='auto')
     std_mnetv2.compile(loss='sparse_categorical_crossentropy',
                        optimizer=opt, metrics=['accuracy'])
