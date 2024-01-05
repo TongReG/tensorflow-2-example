@@ -343,6 +343,6 @@ healthchecksdb
 /vgg13fc
 /vgg13
 /vgg16
-/mnetv2/weights
+/mnetv2
 *.h5
 *.ipynb

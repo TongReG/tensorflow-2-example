@@ -55,6 +55,9 @@ conda install matplotlib pycocotools opencv-python
 `cifarwithvgg.py` Build a VGG network manually and train with CIFAR10/100 datasets, you can save checkpoint while training.<br/>
 >用 `tf.keras` API手动搭建一个VGG网络，并使用CIFAR10/100数据集进行训练，同时保存训练进度。
 
+`cifarwithmnet.py` Use Built-in MobileNetV2 structure to train with CIFAR100 datasets, and save checkpoint while training.<br/>
+>使用 `tf.keras.applications` API，直接获取已搭建好的MobileNetV2结构，并使用CIFAR100数据集进行训练，同时保存训练进度。
+
 `coco_init.py` Prepare MS COCO datasets using `tf.data.TFRecordDataset` API.<br/>
 >使用 `tf.data.TFRecordDataset` API初始化MS COCO数据集。
 
