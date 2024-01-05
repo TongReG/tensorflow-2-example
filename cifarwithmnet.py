@@ -82,8 +82,8 @@ if __name__ == '__main__':
 
     if not os.path.exists("mnetv2/"):
         os.makedirs("mnetv2/")
-        if not os.path.exists("mnetv2/weights"):
-            os.makedirs("mnetv2/weights")
+        os.makedirs("mnetv2/weights")
+        os.makedirs("mnetv2/tensorboardlog")
 
     checkpoint_mnetv2path = "mnetv2/weights"
     # 使用Keras创建一个检查点回调，参考：https://blog.csdn.net/zengNLP/article/details/94589469
@@ -96,6 +96,8 @@ if __name__ == '__main__':
                                                      patience=2)
     # https://tensorflow.google.cn/api_docs/python/tf/keras/callbacks/CSVLogger
     csvlog = tf.keras.callbacks.CSVLogger("mnetv2/traincsv.log", separator=',', append=True)
+    # 添加tensorboard监控回调，以便在tensorboard上显示分析数据
+    tensorboard = tf.keras.callbacks.TensorBoard(log_dir="vgg16/tensorboardlog")
 
 
     try:
@@ -158,14 +160,14 @@ if __name__ == '__main__':
         std_mnetv2.fit(train_images, train_labels,
                        epochs=epoch_num,
                        batch_size=batchsize,
-                       callbacks=[cp_callback, csvlog, change_lr, earlystop],
+                       callbacks=[cp_callback, csvlog, tensorboard, change_lr, earlystop],
                        validation_data=(test_images, test_labels))
         large_loss, large_acc = std_mnetv2.evaluate(x=test_images, y=test_labels, verbose=0)
     else:
         std_mnetv2.fit(train_images, train_labels,
                        epochs=epoch_num - ckpt_num,
                        batch_size=batchsize,
-                       callbacks=[cp_callback, csvlog, earlystop],
+                       callbacks=[cp_callback, csvlog, tensorboard, earlystop],
                        validation_data=(test_images, test_labels))
         large_loss, large_acc = std_mnetv2.evaluate(x=test_images, y=test_labels, verbose=0)
 

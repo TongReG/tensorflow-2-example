@@ -63,6 +63,7 @@ if __name__ == '__main__':
     if not os.path.exists("vgg16/"):
         os.makedirs("vgg16/")
         os.makedirs("vgg16/weights")
+        os.makedirs("vgg16/tensorboardlog")
 
     checkpoint_vgg16path = "vgg16/weights"
     #checkpoint_vgg16path = "vgg16/weights.{epoch:02d}"
@@ -94,6 +95,8 @@ if __name__ == '__main__':
     # https://tensorflow.google.cn/api_docs/python/tf/keras/callbacks/CSVLogger
     csvlog = tf.keras.callbacks.CSVLogger("vgg16/traincsv.log", 
                                           separator=',', append=True)
+    # 添加tensorboard监控回调，以便在tensorboard上显示分析数据
+    tensorboard = tf.keras.callbacks.TensorBoard(log_dir="vgg16/tensorboardlog")
 
     # 绘制训练结果
     EpochArr = []
@@ -174,13 +177,13 @@ if __name__ == '__main__':
                             optimizer=sgd, metrics=['accuracy'])
         vgg16_model.fit(train_images, train_labels,
                         epochs=epoch_num,
-                        callbacks=[change_lr, cp_callback, csvlog],
+                        callbacks=[change_lr, cp_callback, csvlog, tensorboard],
                         validation_data=(test_images, test_labels))
         large_loss, large_acc = vgg16_model.evaluate(x=test_images, y=test_labels, verbose=0)
     else:
         vgg16_reload.fit(train_images, train_labels,
                          epochs=epoch_num - ckpt_num,
-                         callbacks=[change_lr, cp_callback, csvlog],
+                         callbacks=[change_lr, cp_callback, csvlog, tensorboard],
                          validation_data=(test_images, test_labels))
         large_loss, large_acc = vgg16_reload.evaluate(x=test_images, y=test_labels, verbose=0)
 
