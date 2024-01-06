@@ -9,8 +9,9 @@ from matplotlib import pyplot
 
 
 # 对tensorflow环境进行设置
-def configTFEnviron():
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行用于屏蔽GPU设备，以便使用CPU进行训练
+def configTFEnviron(useGPU):
+    if not useGPU:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行用于屏蔽GPU设备，以便使用CPU进行训练
     # tf.random.set_seed(2345)
     physical_devices = tf.config.experimental.list_physical_devices('GPU')
     print(physical_devices)
@@ -41,7 +42,7 @@ def drawLine(arr, arr2, xName, yName, title, graduate):
 
 if __name__ == '__main__':
 
-    configTFEnviron()
+    configTFEnviron(useGPU=True)
 
     # 如果模型存在则直接预加载，不再训练
     try:  

@@ -7,8 +7,9 @@ from matplotlib import pyplot
 
 
 # 对tensorflow环境进行设置
-def configTFEnviron():
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行用于屏蔽GPU设备，以便使用CPU进行训练
+def configTFEnviron(useGPU):
+    if not useGPU:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 这一行用于屏蔽GPU设备，以便使用CPU进行训练
     # tf.random.set_seed(2345)
     physical_devices = tf.config.experimental.list_physical_devices('GPU')
     print(physical_devices)
@@ -50,7 +51,7 @@ def scheduler(epoch):
 
 if __name__ == '__main__':
 
-    configTFEnviron()
+    configTFEnviron(useGPU=True)
 
     (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.cifar100.load_data()
     train_label_s = tf.squeeze(train_labels, axis=1)
@@ -97,7 +98,7 @@ if __name__ == '__main__':
     # https://tensorflow.google.cn/api_docs/python/tf/keras/callbacks/CSVLogger
     csvlog = tf.keras.callbacks.CSVLogger("mnetv2/traincsv.log", separator=',', append=True)
     # 添加tensorboard监控回调，以便在tensorboard上显示分析数据
-    tensorboard = tf.keras.callbacks.TensorBoard(log_dir="vgg16/tensorboardlog")
+    tensorboard = tf.keras.callbacks.TensorBoard(log_dir="mnetv2/tensorboardlog")
 
 
     try:
