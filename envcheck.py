@@ -6,13 +6,59 @@ import platform
 # division char...
 division = "=====" * 8
 
+# color const... 
+COLOR_RED = '\033[91m'  
+COLOR_GREEN = '\033[92m'  
+COLOR_YELLOW = '\033[93m'  
+COLOR_BLUE = '\033[94m'  
+COLOR_PURPLE = '\033[95m'
+COLOR_CYAN = '\033[96m'
+COLOR_WHITE = '\033[97m'
+COLOR_RESET = '\033[0m' 
+color_set = [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW,
+            COLOR_PURPLE, COLOR_CYAN, COLOR_WHITE]
+
+
+def colorize(str, color):
+    if not color in color_set:
+        return str
+    
+    colorized = {
+        COLOR_RED: COLOR_RED + str + COLOR_RESET,
+        COLOR_GREEN: COLOR_GREEN + str + COLOR_RESET,
+        COLOR_YELLOW: COLOR_YELLOW + str + COLOR_RESET,
+        COLOR_BLUE: COLOR_BLUE + str + COLOR_RESET,
+        COLOR_PURPLE: COLOR_PURPLE + str + COLOR_RESET,
+        COLOR_CYAN: COLOR_CYAN + str + COLOR_RESET,
+        COLOR_WHITE: COLOR_WHITE + str + COLOR_RESET,
+    }
+
+    return colorized[color]
+
 
 def printdiv(str):
     print()
-    print(division)
+    print(colorize(division, COLOR_YELLOW))
     leftRightSpace = int((len(division) - len(str))/2)
-    print(" " * leftRightSpace + str + "" * leftRightSpace)
-    print(division)
+    title = " " * leftRightSpace + str + "" * leftRightSpace
+    print(colorize(title, COLOR_YELLOW))
+    print(colorize(division, COLOR_YELLOW))
+
+
+def printFeatures(title, val):
+    fullstr = title + str(val)
+    if val is True:
+        print(colorize(fullstr, COLOR_GREEN))
+    else:
+        print(colorize(fullstr, COLOR_RED))
+
+
+def printInfo(str):
+    print(colorize(str, COLOR_GREEN))
+
+
+def printError(str):
+    print(colorize(str, COLOR_RED))
 
 
 def sysInfo():
@@ -36,7 +82,10 @@ def buildInfo():
     printdiv("TENSORFLOW BUILDINFO")
     tfbuildinfo = tf.sysconfig.get_build_info()
     for name, state in tfbuildinfo.items():
-        print(name, "=", state)
+        if name.startswith('is'):
+            printFeatures(name + " => ", state)
+        else:
+            print(name, "=", state)
 
 
 def versionInfo():
@@ -64,33 +113,37 @@ def versionInfo():
 def showPath():
     printdiv("tf.__path__")
     for paths in tf.__path__:
-        print(paths)
+        print(colorize(paths, COLOR_CYAN))
 
 
 def showFeatures():
     printdiv("FEATURES")
     tfversion = tf.__version__
     if tfversion < '2.0.0':
-        print("IsMklEnabled ==> " + str(tf.pywrap_tensorflow.IsMklEnabled()))
+        printFeatures("IsMklEnabled ==> ",
+                      tf.pywrap_tensorflow.IsMklEnabled())
     else:
         # tf.python has deperacated
         if hasattr(tf, "python"):
-            print("IsBuiltWithNvcc ==> " +
-                  str(tf.python.framework.test_util.IsBuiltWithNvcc()))
-            print("IsBuiltWithROCm ==> " +
-                  str(tf.python.framework.test_util.IsBuiltWithROCm()))
-            print("IsBuiltWithXLA ==> " +
-                  str(tf.python.framework.test_util.IsBuiltWithXLA()))
-            print("IsGoogleCudaEnabled ==> " +
-                  str(tf.python.framework.test_util.IsGoogleCudaEnabled()))
-            print("IsMklEnabled ==> " +
-                  str(tf.python.framework.test_util.IsMklEnabled()))
+            printFeatures("IsBuiltWithNvcc ==> ",
+                          tf.python.framework.test_util.IsBuiltWithNvcc())
+            printFeatures("IsBuiltWithROCm ==> ",
+                          tf.python.framework.test_util.IsBuiltWithROCm())
+            printFeatures("IsBuiltWithXLA ==> ",
+                          tf.python.framework.test_util.IsBuiltWithXLA())
+            printFeatures("IsGoogleCudaEnabled ==> ",
+                          tf.python.framework.test_util.IsGoogleCudaEnabled())
+            printFeatures("IsMklEnabled ==> ",
+                          tf.python.framework.test_util.IsMklEnabled())
         else:
-            print("IsBuiltWithGPUSupport ==> " +
-                  str(tf.test.is_built_with_gpu_support()))
-            print("IsBuiltWithCUDA ==> " + str(tf.test.is_built_with_cuda()))
-            print("IsBuiltWithROCm ==> " + str(tf.test.is_built_with_rocm()))
-            print("IsBuiltWithXLA ==> " + str(tf.test.is_built_with_xla()))
+            printFeatures("IsBuiltWithGPUSupport ==> ",
+                          tf.test.is_built_with_gpu_support())
+            printFeatures("IsBuiltWithCUDA ==> ",
+                          tf.test.is_built_with_cuda())
+            printFeatures("IsBuiltWithROCm ==> ",
+                          tf.test.is_built_with_rocm())
+            printFeatures("IsBuiltWithXLA ==> ",
+                          tf.test.is_built_with_xla())
 
 
 def showDevicesFallBack():
@@ -99,17 +152,17 @@ def showDevicesFallBack():
     if Cdv != None:
         printdiv("CPU DEVICES")
         for device in Cdv:
-            print("{}: {}".format(device.device_type, device.name))
+            printInfo("{}: {}".format(device.device_type, device.name))
     else:
-        printdiv("Warning: No CPU Devices Available!")
+        printError("Attention: No CPU Devices Available!")
     # show GPUs
     Gdv = tf.config.list_physical_devices(device_type='GPU')
     if Gdv != []:
         printdiv("GPU DEVICES")
         for device in Gdv:
-            print("GPUDevice ==> ", device)
+            printInfo("{}: {}".format(device.device_type, device.name))
     else:
-        printdiv("No GPU Devices Available!")
+        printError("Attention: No GPU Devices Available!")
 
 
 def showDevices():
